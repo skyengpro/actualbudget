@@ -27,6 +27,7 @@ type ItemProps = {
   onClick?: ComponentProps<typeof ItemContent>['onClick'];
   forceHover?: boolean;
   forceActive?: boolean;
+  exact?: boolean;
 };
 
 export function Item({
@@ -39,6 +40,7 @@ export function Item({
   indent = 0,
   forceHover = false,
   forceActive = false,
+  exact = false,
 }: ItemProps) {
   const hoverStyle = {
     backgroundColor: theme.sidebarItemBackgroundHover,
@@ -80,6 +82,7 @@ export function Item({
         }}
         to={to}
         onClick={onClick}
+        exact={exact}
       >
         {content}
       </ItemContent>

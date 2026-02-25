@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import {
+  SvgChartBar,
   SvgCheveronDown,
   SvgCheveronRight,
   SvgCog,
@@ -37,6 +38,7 @@ export function PrimaryButtons() {
     '/payees',
     '/rules',
     '/templates',
+    '/reports/insights',
     '/bank-sync',
     '/settings',
     '/tools',
@@ -51,7 +53,7 @@ export function PrimaryButtons() {
   return (
     <View style={{ flexShrink: 0 }}>
       <Item title={t('Budget')} Icon={SvgWallet} to="/budget" />
-      <Item title={t('Reports')} Icon={SvgReports} to="/reports" />
+      <Item title={t('Reports')} Icon={SvgReports} to="/reports" exact />
       <Item title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
       <Item
         title={t('More')}
@@ -78,6 +80,12 @@ export function PrimaryButtons() {
             title={t('Templates')}
             Icon={SvgFileDouble}
             to="/templates"
+            indent={15}
+          />
+          <SecondaryItem
+            title={t('Insights')}
+            Icon={SvgChartBar}
+            to="/reports/insights"
             indent={15}
           />
           {isUsingServer && (

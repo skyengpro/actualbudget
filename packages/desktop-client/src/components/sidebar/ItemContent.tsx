@@ -14,6 +14,7 @@ type ItemContentProps = {
   activeStyle: CSSProperties;
   children: ReactNode;
   forceActive?: boolean;
+  exact?: boolean;
 };
 
 export function ItemContent({
@@ -22,6 +23,7 @@ export function ItemContent({
   onClick,
   activeStyle,
   forceActive,
+  exact,
   children,
 }: ItemContentProps) {
   return onClick ? (
@@ -37,7 +39,13 @@ export function ItemContent({
       {children}
     </Button>
   ) : (
-    <Link variant="internal" to={to} style={style} activeStyle={activeStyle}>
+    <Link
+      variant="internal"
+      to={to}
+      style={style}
+      activeStyle={activeStyle}
+      isExactPathMatch={exact}
+    >
       {children}
     </Link>
   );
