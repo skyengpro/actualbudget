@@ -2,6 +2,40 @@
   <img src="/demo.png" alt="Actualbudget" />
 </p>
 
+> **Note:** This is a fork of [Actual Budget](https://github.com/actualbudget/actual) with additional features. All credit for the original project goes to the Actual Budget team and contributors.
+
+---
+
+## Fork Features
+
+This fork includes the following additional features:
+
+### Transaction Templates
+
+Quickly create transactions using pre-defined templates. Save your common transactions (rent, utilities, subscriptions) as templates and apply them with a single click.
+
+**Features:**
+- Create, edit, and delete transaction templates
+- Templates store: name, account, payee, category, amount, and notes
+- Apply templates to instantly create new transactions
+- Access via sidebar: **More > Templates**
+
+**New Files Added:**
+| Component | Location |
+|-----------|----------|
+| Database Migration | `packages/loot-core/migrations/1766870400000_transaction_templates.sql` |
+| API Handlers | `packages/loot-core/src/server/templates/app.ts` |
+| TypeScript Types | `packages/loot-core/src/types/models/transaction-template.ts` |
+| React Hook | `packages/desktop-client/src/hooks/useTemplates.ts` |
+| UI Components | `packages/desktop-client/src/components/templates/` |
+| Edit Modal | `packages/desktop-client/src/components/modals/TemplateEditModal.tsx` |
+
+---
+
+## Original Project
+
+This project is forked from **[Actual Budget](https://github.com/actualbudget/actual)** - a local-first personal finance tool that is 100% free and open-source.
+
 ## Getting Started
 
 Actual is a local-first personal finance tool. It is 100% free and open-source, written in NodeJS, it has a synchronization element so that all your changes can move between devices without any heavy lifting.
@@ -15,6 +49,7 @@ Want to say thanks? Click the ⭐ at the top of the page.
 - Actual [discord](https://discord.gg/pRYNYr4W5A) community.
 - Actual [Community Documentation](https://actualbudget.org/docs)
 - [Frequently asked questions](https://actualbudget.org/docs/faq)
+- **Original Repository**: [github.com/actualbudget/actual](https://github.com/actualbudget/actual)
 
 ## Installation
 
@@ -26,6 +61,17 @@ There are four ways to deploy Actual:
 1. Local-only apps - [downloadable Windows, Mac and Linux apps](https://actualbudget.org/download/) you can run on your device
 
 Learn more in the [installation instructions docs](https://actualbudget.org/docs/install/).
+
+### Development Setup
+
+To run this fork locally with Docker:
+
+```bash
+# Start the development server
+docker compose up --build
+
+# The app will be available at http://localhost:3001
+```
 
 ## Ready to Start Budgeting?
 
@@ -72,6 +118,6 @@ Make Actual Budget accessible to more people by helping with the [Internationali
 <img src="https://hosted.weblate.org/widget/actualbudget/actual/287x66-grey.png" alt="Translation status" />
 </a>
 
-## Repo Activity
+## License
 
-![Alt](https://repobeats.axiom.co/api/embed/e20537dd8b74956f86736726ccfbc6f0565bec22.svg 'Repobeats analytics image')
+This project is licensed under the MIT License - see the original [Actual Budget repository](https://github.com/actualbudget/actual) for details.
