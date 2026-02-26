@@ -28,6 +28,7 @@ export type UsersWithAccess = {
   userName: string;
   displayName: string;
   owner: boolean;
+  role?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
 };
 export type RemoteFile = {
   deleted: boolean;

@@ -148,13 +148,13 @@ class FilesService {
   findUsersWithAccess(fileId) {
     const userAccess =
       this.accountDb.all(
-        `SELECT UA.user_id as userId, users.display_name displayName, users.user_name userName
+        `SELECT UA.user_id as userId, users.display_name displayName, users.user_name userName, UA.role
               FROM files
                 JOIN user_access UA ON UA.file_id = files.id
                 JOIN users on users.id = UA.user_id
               WHERE files.id = ?
           UNION ALL
-        SELECT users.id, users.display_name, users.user_name
+        SELECT users.id, users.display_name, users.user_name, 'OWNER' as role
               FROM files
                 JOIN users on users.id = files.owner
               WHERE files.id = ?

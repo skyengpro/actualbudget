@@ -23,6 +23,7 @@ import { View } from '@actual-app/components/view';
 import { Item } from './Item';
 import { SecondaryItem } from './SecondaryItem';
 
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useIsTestEnv } from '@desktop-client/hooks/useIsTestEnv';
 import { useSyncServerStatus } from '@desktop-client/hooks/useSyncServerStatus';
 
@@ -35,6 +36,7 @@ export function PrimaryButtons() {
   const syncServerStatus = useSyncServerStatus();
   const isTestEnv = useIsTestEnv();
   const isUsingServer = syncServerStatus !== 'no-server' || isTestEnv;
+  const { canAccessSettings } = useFilePermission();
 
   const isActive = [
     '/payees',
@@ -128,12 +130,14 @@ export function PrimaryButtons() {
             to="/tags"
             indent={15}
           />
-          <SecondaryItem
-            title={t('Settings')}
-            Icon={SvgCog}
-            to="/settings"
-            indent={15}
-          />
+          {canAccessSettings && (
+            <SecondaryItem
+              title={t('Settings')}
+              Icon={SvgCog}
+              to="/settings"
+              indent={15}
+            />
+          )}
         </>
       )}
     </View>

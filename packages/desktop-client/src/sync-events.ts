@@ -368,6 +368,17 @@ export function listenForSyncEvent(store: AppStore, queryClient: QueryClient) {
           notif = null;
           void store.dispatch(signOut());
           break;
+        case 'file-access-not-allowed':
+          notif = {
+            title: t('View-only access'),
+            message: t(
+              'You have view-only access to this budget. Your changes will not be saved to the server.',
+            ),
+            type: 'warning',
+            sticky: true,
+            id: 'view-only-access',
+          };
+          break;
         default:
           console.trace('unknown error', event);
           notif = {

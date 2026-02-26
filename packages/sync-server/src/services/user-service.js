@@ -191,7 +191,7 @@ export function checkFilePermission(fileId, userId) {
   );
 }
 
-export function addUserAccess(userId, fileId) {
+export function addUserAccess(userId, fileId, role = 'EDITOR') {
   if (!userId || !fileId) {
     throw new Error('Invalid parameters');
   }
@@ -202,14 +202,35 @@ export function addUserAccess(userId, fileId) {
       throw new Error('User or file not found');
     }
     getAccountDb().mutate(
-      'INSERT INTO user_access (user_id, file_id) VALUES (?, ?)',
-      [userId, fileId],
+      'INSERT INTO user_access (user_id, file_id, role) VALUES (?, ?, ?)',
+      [userId, fileId, role],
     );
   } catch (error) {
     if (error.message.includes('UNIQUE constraint')) {
       throw new Error('Access already exists');
     }
     throw new Error(`Failed to add user access: ${error.message}`);
+  }
+}
+
+export function updateUserFileRole(userId, fileId, role) {
+  if (!userId || !fileId || !role) {
+    throw new Error('Invalid parameters');
+  }
+  const validRoles = ['VIEWER', 'EDITOR', 'ADMIN'];
+  if (!validRoles.includes(role)) {
+    throw new Error('Invalid role');
+  }
+  try {
+    const result = getAccountDb().mutate(
+      'UPDATE user_access SET role = ? WHERE user_id = ? AND file_id = ?',
+      [role, userId, fileId],
+    );
+    if (result.changes === 0) {
+      throw new Error('Access not found');
+    }
+  } catch (error) {
+    throw new Error(`Failed to update user file role: ${error.message}`);
   }
 }
 
@@ -253,7 +274,8 @@ export function getAllUserAccess(fileId) {
         user_name     as userName,
         display_name  as displayName,
         CASE WHEN user_access.file_id IS NULL THEN 0 ELSE 1 END as haveAccess,
-        CASE WHEN files.id IS NULL THEN 0 ELSE 1 END as owner
+        CASE WHEN files.id IS NULL THEN 0 ELSE 1 END as owner,
+        COALESCE(user_access.role, CASE WHEN files.id IS NOT NULL THEN 'OWNER' ELSE NULL END) as role
       FROM users
       ${joinType} user_access ON user_access.file_id = ? AND user_access.user_id = users.id
       ${joinType} files       ON files.id = ? AND files.owner = users.id
@@ -262,6 +284,29 @@ export function getAllUserAccess(fileId) {
     `,
     [fileId, fileId],
   );
+}
+
+export function getUserFileRole(userId, fileId) {
+  if (!userId || !fileId) {
+    return null;
+  }
+  const accountDb = getAccountDb();
+
+  // Check if user is the file owner
+  const file = accountDb.first('SELECT owner FROM files WHERE id = ?', [
+    fileId,
+  ]);
+  if (file?.owner === userId) {
+    return 'OWNER';
+  }
+
+  // Check user_access table for explicit role
+  const access = accountDb.first(
+    'SELECT role FROM user_access WHERE user_id = ? AND file_id = ?',
+    [userId, fileId],
+  );
+
+  return access?.role || null;
 }
 
 export function getOpenIDConfig() {

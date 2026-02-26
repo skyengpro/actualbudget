@@ -14,6 +14,7 @@ import type { ScheduleItemAction } from './SchedulesTable';
 
 import { Search } from '@desktop-client/components/common/Search';
 import { Page } from '@desktop-client/components/Page';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useSchedules } from '@desktop-client/hooks/useSchedules';
 import { pushModal } from '@desktop-client/modals/modalsSlice';
 import { useDispatch } from '@desktop-client/redux';
@@ -23,6 +24,7 @@ export function Schedules() {
 
   const dispatch = useDispatch();
   const [filter, setFilter] = useState('');
+  const { canWrite } = useFilePermission();
 
   const onEdit = useCallback(
     (id: ScheduleEntity['id']) => {
@@ -120,32 +122,34 @@ export function Schedules() {
         style={{ backgroundColor: theme.tableBackground }}
       />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          margin: '20px 0',
-          flexShrink: 0,
-        }}
-      >
+      {canWrite && (
         <View
           style={{
             flexDirection: 'row',
-            alignItems: 'center',
-            gap: '1em',
+            justifyContent: 'space-between',
+            margin: '20px 0',
+            flexShrink: 0,
           }}
         >
-          <Button onPress={onDiscover}>
-            <Trans>Find schedules</Trans>
-          </Button>
-          <Button onPress={onChangeUpcomingLength}>
-            <Trans>Change upcoming length</Trans>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: '1em',
+            }}
+          >
+            <Button onPress={onDiscover}>
+              <Trans>Find schedules</Trans>
+            </Button>
+            <Button onPress={onChangeUpcomingLength}>
+              <Trans>Change upcoming length</Trans>
+            </Button>
+          </View>
+          <Button variant="primary" onPress={onAdd}>
+            <Trans>Add new schedule</Trans>
           </Button>
         </View>
-        <Button variant="primary" onPress={onAdd}>
-          <Trans>Add new schedule</Trans>
-        </Button>
-      </View>
+      )}
     </Page>
   );
 }

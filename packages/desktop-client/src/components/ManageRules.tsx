@@ -32,6 +32,7 @@ import { useAccounts } from '@desktop-client/hooks/useAccounts';
 import { useCategories } from '@desktop-client/hooks/useCategories';
 import { usePayees } from '@desktop-client/hooks/usePayees';
 import { useSchedules } from '@desktop-client/hooks/useSchedules';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import {
   SelectedProvider,
   useSelected,
@@ -129,6 +130,7 @@ export function ManageRules({
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState('');
   const dispatch = useDispatch();
+  const { canWrite } = useFilePermission();
 
   const { schedules = [] } = useSchedules({
     query: useMemo(() => q('schedules').select('*'), []),
@@ -360,16 +362,18 @@ export function ManageRules({
           }}
         >
           <SpaceBetween gap={10} style={{ justifyContent: 'flex-end' }}>
-            {selectedInst.items.size > 0 && (
+            {canWrite && selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
                 <Trans count={selectedInst.items.size}>
                   Delete {{ count: selectedInst.items.size }} rules
                 </Trans>
               </Button>
             )}
-            <Button variant="primary" onPress={onCreateRule}>
-              <Trans>Create new rule</Trans>
-            </Button>
+            {canWrite && (
+              <Button variant="primary" onPress={onCreateRule}>
+                <Trans>Create new rule</Trans>
+              </Button>
+            )}
           </SpaceBetween>
         </View>
       </View>

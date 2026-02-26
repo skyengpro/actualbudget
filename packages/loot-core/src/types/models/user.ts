@@ -22,4 +22,5 @@ export type UserAvailable = {
   userName: string;
   haveAccess?: number;
   owner?: number;
+  role?: 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER' | null;
 };

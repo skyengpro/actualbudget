@@ -17,6 +17,7 @@ import { TagsHeader } from './TagsHeader';
 import { TagsList } from './TagsList';
 
 import { Search } from '@desktop-client/components/common/Search';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import {
   SelectedProvider,
   useSelected,
@@ -33,6 +34,7 @@ export function ManageTags() {
   const [hoveredTag, setHoveredTag] = useState<string>();
   const [create, setCreate] = useState(false);
   const { data: tags = [] } = useTags();
+  const { canWrite } = useFilePermission();
 
   const filteredTags = useMemo(() => {
     return filter === ''
@@ -81,18 +83,22 @@ export function ManageTags() {
           </View>
         </View>
         <SpaceBetween gap={10} style={{ marginTop: 12, alignItems: 'center' }}>
-          <Button variant="bare" onPress={() => setCreate(true)}>
-            <SvgAdd width={10} height={10} style={{ marginRight: 3 }} />
-            <Trans>Add New</Trans>
-          </Button>
-          <Button variant="bare" onPress={() => discoverTags()}>
-            <SvgSearchAlternate
-              width={10}
-              height={10}
-              style={{ marginRight: 3 }}
-            />
-            <Trans>Find Existing Tags</Trans>
-          </Button>
+          {canWrite && (
+            <Button variant="bare" onPress={() => setCreate(true)}>
+              <SvgAdd width={10} height={10} style={{ marginRight: 3 }} />
+              <Trans>Add New</Trans>
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="bare" onPress={() => discoverTags()}>
+              <SvgSearchAlternate
+                width={10}
+                height={10}
+                style={{ marginRight: 3 }}
+              />
+              <Trans>Find Existing Tags</Trans>
+            </Button>
+          )}
           <View style={{ flex: 1 }} />
           <Search
             placeholder={t('Filter tags...')}
@@ -137,7 +143,7 @@ export function ManageTags() {
             gap={10}
             style={{ alignItems: 'center', justifyContent: 'flex-end' }}
           >
-            {selectedInst.items.size > 0 && (
+            {canWrite && selectedInst.items.size > 0 && (
               <Button onPress={onDeleteSelected}>
                 <Trans count={selectedInst.items.size}>
                   Delete {selectedInst.items.size} tags

@@ -11,6 +11,7 @@ import { View } from '@actual-app/components/view';
 
 import { send } from 'loot-core/platform/client/connection';
 import { getUserAccessErrors } from 'loot-core/shared/errors';
+import type { FileRole } from 'loot-core/types/models/user-access';
 
 import {
   Modal,
@@ -29,6 +30,12 @@ type EditUserAccessProps = Extract<
   { name: 'edit-access' }
 >['options'];
 
+const roleOptions: [FileRole, string][] = [
+  ['VIEWER', 'Viewer - Read only'],
+  ['EDITOR', 'Editor - Can edit budget'],
+  ['ADMIN', 'Admin - Can share with others'],
+];
+
 export function EditUserAccess({
   access: defaultUserAccess,
   onSave: originalOnSave,
@@ -37,6 +44,7 @@ export function EditUserAccess({
   const dispatch = useDispatch();
 
   const [userId, setUserId] = useState(defaultUserAccess.userId ?? '');
+  const [role, setRole] = useState<FileRole>(defaultUserAccess.role ?? 'EDITOR');
   const [error, setSetError] = useState('');
   const [availableUsers, setAvailableUsers] = useState<[string, string][]>([]);
 
@@ -63,6 +71,7 @@ export function EditUserAccess({
     const userAccess = {
       ...defaultUserAccess,
       userId,
+      role,
     };
 
     const { error } = await send('access-add', userAccess);
@@ -134,6 +143,30 @@ export function EditUserAccess({
                   <Trans>No users available to give access</Trans>
                 </Text>
               )}
+            </FormField>
+          </SpaceBetween>
+
+          <SpaceBetween style={{ marginTop: 15 }}>
+            <FormField style={{ flex: 1 }}>
+              <FormLabel title={t('Role')} htmlFor="role-field" />
+              <View>
+                <Select
+                  options={roleOptions}
+                  onChange={(newValue: string) => setRole(newValue as FileRole)}
+                  value={role}
+                />
+                <Text
+                  style={{
+                    ...styles.verySmallText,
+                    color: theme.pageTextLight,
+                    marginTop: 5,
+                  }}
+                >
+                  <Trans>
+                    Viewer: Read only | Editor: Can edit | Admin: Can share
+                  </Trans>
+                </Text>
+              </View>
             </FormField>
           </SpaceBetween>
 

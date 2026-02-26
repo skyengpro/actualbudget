@@ -63,13 +63,13 @@ function AppInner() {
 
   useEffect(() => {
     const maybeUpdate = async <T,>(cb?: () => T): Promise<T | void> => {
-      if (global.Actual.isUpdateReadyForDownload()) {
+      if (global.Actual?.isUpdateReadyForDownload?.()) {
         dispatch(
           setAppState({
             loadingText: t('Downloading and applying update...'),
           }),
         );
-        await global.Actual.applyAppUpdate();
+        await global.Actual.applyAppUpdate?.();
       }
       return cb?.();
     };

@@ -2,6 +2,10 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 import { isAdmin } from './account-db';
+import {
+  FilePermissions,
+  validateFileRole,
+} from './services/file-permission-service';
 import * as UserService from './services/user-service';
 import {
   errorMiddleware,
@@ -180,14 +184,8 @@ app.delete('/users', validateSessionMiddleware, async (req, res) => {
 app.get('/access', validateSessionMiddleware, (req, res) => {
   const fileId = req.query.fileId;
 
-  const { granted } = UserService.checkFilePermission(
-    fileId,
-    res.locals.user_id,
-  ) || {
-    granted: 0,
-  };
-
-  if (granted === 0 && !isAdmin(res.locals.user_id)) {
+  // Check if user can read the file (VIEWER or higher)
+  if (!FilePermissions.canRead(res.locals.user_id, fileId)) {
     res.status(403).send({
       status: 'error',
       reason: 'forbidden',
@@ -221,18 +219,12 @@ app.post('/access', (req, res) => {
 
   if (!session) return;
 
-  const { granted } = UserService.checkFilePermission(
-    userAccess.fileId,
-    session.user_id,
-  ) || {
-    granted: 0,
-  };
-
-  if (granted === 0 && !isAdmin(session.user_id)) {
-    res.status(400).send({
+  // Check if user can share the file (requires ADMIN role or higher)
+  if (!FilePermissions.canShare(session.user_id, userAccess.fileId)) {
+    res.status(403).send({
       status: 'error',
       reason: 'file-denied',
-      details: "You don't have permissions over this file",
+      details: "You don't have permissions to share this file",
     });
     return;
   }
@@ -256,6 +248,17 @@ app.post('/access', (req, res) => {
     return;
   }
 
+  // Validate role if provided
+  const role = userAccess.role || 'EDITOR';
+  if (!validateFileRole(role) || role === 'OWNER') {
+    res.status(400).send({
+      status: 'error',
+      reason: 'invalid-role',
+      details: 'Invalid role. Must be VIEWER, EDITOR, or ADMIN',
+    });
+    return;
+  }
+
   if (UserService.countUserAccess(userAccess.fileId, userAccess.userId) > 0) {
     res.status(400).send({
       status: 'error',
@@ -265,9 +268,72 @@ app.post('/access', (req, res) => {
     return;
   }
 
-  UserService.addUserAccess(userAccess.userId, userAccess.fileId);
+  UserService.addUserAccess(userAccess.userId, userAccess.fileId, role);
 
   res.status(200).send({ status: 'ok', data: {} });
+});
+
+app.patch('/access', validateSessionMiddleware, (req, res) => {
+  const { fileId, userId, role } = req.body || {};
+
+  // Check if user can share the file (requires ADMIN role or higher)
+  if (!FilePermissions.canShare(res.locals.user_id, fileId)) {
+    res.status(403).send({
+      status: 'error',
+      reason: 'file-denied',
+      details: "You don't have permissions to modify access for this file",
+    });
+    return;
+  }
+
+  const fileIdInDb = UserService.getFileById(fileId);
+  if (!fileIdInDb) {
+    res.status(404).send({
+      status: 'error',
+      reason: 'invalid-file-id',
+      details: 'File not found at server',
+    });
+    return;
+  }
+
+  if (!userId) {
+    res.status(400).send({
+      status: 'error',
+      reason: 'user-cant-be-empty',
+      details: 'User cannot be empty',
+    });
+    return;
+  }
+
+  if (!role) {
+    res.status(400).send({
+      status: 'error',
+      reason: 'role-cant-be-empty',
+      details: 'Role cannot be empty',
+    });
+    return;
+  }
+
+  // Validate role - cannot assign OWNER through this endpoint
+  if (!validateFileRole(role) || role === 'OWNER') {
+    res.status(400).send({
+      status: 'error',
+      reason: 'invalid-role',
+      details: 'Invalid role. Must be VIEWER, EDITOR, or ADMIN',
+    });
+    return;
+  }
+
+  try {
+    UserService.updateUserFileRole(userId, fileId, role);
+    res.status(200).send({ status: 'ok', data: {} });
+  } catch (error) {
+    res.status(400).send({
+      status: 'error',
+      reason: 'update-failed',
+      details: error.message,
+    });
+  }
 });
 
 app.delete('/access', (req, res) => {
@@ -275,18 +341,12 @@ app.delete('/access', (req, res) => {
   const session = validateSession(req, res);
   if (!session) return;
 
-  const { granted } = UserService.checkFilePermission(
-    fileId,
-    session.user_id,
-  ) || {
-    granted: 0,
-  };
-
-  if (granted === 0 && !isAdmin(session.user_id)) {
-    res.status(400).send({
+  // Check if user can share the file (requires ADMIN role or higher to revoke access)
+  if (!FilePermissions.canShare(session.user_id, fileId)) {
+    res.status(403).send({
       status: 'error',
       reason: 'file-denied',
-      details: "You don't have permissions over this file",
+      details: "You don't have permissions to modify access for this file",
     });
     return;
   }
@@ -320,15 +380,9 @@ app.delete('/access', (req, res) => {
 app.get('/access/users', validateSessionMiddleware, async (req, res) => {
   const fileId = req.query.fileId;
 
-  const { granted } = UserService.checkFilePermission(
-    fileId,
-    res.locals.user_id,
-  ) || {
-    granted: 0,
-  };
-
-  if (granted === 0 && !isAdmin(res.locals.user_id)) {
-    res.status(400).send({
+  // Check if user can read the file (VIEWER or higher) to see users
+  if (!FilePermissions.canRead(res.locals.user_id, fileId)) {
+    res.status(403).send({
       status: 'error',
       reason: 'file-denied',
       details: "You don't have permissions over this file",
@@ -356,18 +410,17 @@ app.post(
   (req, res) => {
     const newUserOwner = req.body || {};
 
-    const { granted } = UserService.checkFilePermission(
-      newUserOwner.fileId,
-      res.locals.user_id,
-    ) || {
-      granted: 0,
-    };
-
-    if (granted === 0 && !isAdmin(res.locals.user_id)) {
-      res.status(400).send({
+    // Check if user can transfer ownership (requires OWNER role)
+    if (
+      !FilePermissions.canTransferOwnership(
+        res.locals.user_id,
+        newUserOwner.fileId,
+      )
+    ) {
+      res.status(403).send({
         status: 'error',
         reason: 'file-denied',
-        details: "You don't have permissions over this file",
+        details: 'Only the owner can transfer ownership of this file',
       });
       return;
     }

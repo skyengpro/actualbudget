@@ -67,6 +67,7 @@ import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TemplateEditModal } from './modals/TemplateEditModal';
 import { ReimbursementEditModal } from './modals/ReimbursementEditModal';
 import { ReimbursementPayModal } from './modals/ReimbursementPayModal';
+import { ShareFileModal } from './modals/ShareFileModal';
 import { TrackingBalanceMenuModal } from './modals/TrackingBalanceMenuModal';
 import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
 import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
@@ -418,6 +419,9 @@ export function Modals() {
 
         case 'reimbursement-pay':
           return <ReimbursementPayModal key={key} {...modal.options} />;
+
+        case 'share-file':
+          return <ShareFileModal key={key} {...modal.options} />;
 
         default:
           throw new Error('Unknown modal');

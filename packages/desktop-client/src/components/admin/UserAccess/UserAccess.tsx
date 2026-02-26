@@ -168,6 +168,7 @@ function UserAccessContent({ isModal }: ManageUserAccessContentProps) {
             accesses={filteredAccesses}
             hoveredAccess={hoveredUserAccess}
             onHover={onHover}
+            onRoleChange={() => void loadAccess()}
           />
         </InfiniteScrollWrapper>
       </View>
@@ -203,12 +204,14 @@ type UsersAccessListProps = {
   accesses: UserAccessEntity[];
   hoveredAccess?: string;
   onHover?: (id: string | null) => void;
+  onRoleChange?: () => void;
 };
 
 function UserAccessList({
   accesses,
   hoveredAccess,
   onHover,
+  onRoleChange,
 }: UsersAccessListProps) {
   if (accesses.length === 0) {
     return null;
@@ -225,6 +228,7 @@ function UserAccessList({
             access={access}
             hovered={hovered}
             onHover={onHover}
+            onRoleChange={onRoleChange}
           />
         );
       })}

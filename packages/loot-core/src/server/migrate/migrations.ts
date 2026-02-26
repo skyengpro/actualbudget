@@ -10,6 +10,7 @@ import m1722804019000 from '../../../migrations/1722804019000_create_dashboard_t
 import m1723665565000 from '../../../migrations/1723665565000_prefs';
 import m1765518577215 from '../../../migrations/1765518577215_multiple_dashboards';
 import m1770000000000 from '../../../migrations/1770000000000_add_reimbursements';
+import m1780000000000 from '../../../migrations/1780000000000_add_account_currency';
 import * as fs from '../../platform/server/fs';
 import { logger } from '../../platform/server/log';
 import * as sqlite from '../../platform/server/sqlite';
@@ -24,6 +25,7 @@ const javascriptMigrations = {
   1723665565000: m1723665565000,
   1765518577215: m1765518577215,
   1770000000000: m1770000000000,
+  1780000000000: m1780000000000,
 };
 
 export async function withMigrationsDir(

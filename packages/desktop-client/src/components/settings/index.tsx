@@ -29,6 +29,8 @@ import { ThemeSettings } from './Themes';
 import { AdvancedToggle, Setting } from './UI';
 
 import { getLatestAppVersion } from '@desktop-client/app/appSlice';
+import { useAuth } from '@desktop-client/auth/AuthProvider';
+import { Permissions } from '@desktop-client/auth/types';
 import { closeBudget } from '@desktop-client/budgetfiles/budgetfilesSlice';
 import { Link } from '@desktop-client/components/common/Link';
 import {
@@ -178,6 +180,8 @@ export function Settings() {
   const dispatch = useDispatch();
   const isCurrencyExperimentalEnabled = useFeatureFlag('currency');
   const [_, setDefaultCurrencyCodePref] = useSyncedPref('defaultCurrencyCode');
+  const { hasPermission } = useAuth();
+  const isServerAdmin = hasPermission(Permissions.ADMINISTRATOR);
 
   const onCloseBudget = () => {
     void dispatch(closeBudget());
@@ -246,7 +250,7 @@ export function Settings() {
         <FormatSettings />
         {isCurrencyExperimentalEnabled && <CurrencySettings />}
         <LanguageSettings />
-        <AuthSettings />
+        {isServerAdmin && <AuthSettings />}
         <EncryptionSettings />
         <BudgetTypeSettings />
         {isElectron() && <Backups />}
@@ -256,7 +260,7 @@ export function Settings() {
           <ResetCache />
           <ResetSync />
           <RepairTransactions />
-          <ExperimentalFeatures />
+          {isServerAdmin && <ExperimentalFeatures />}
         </AdvancedToggle>
       </View>
     </Page>

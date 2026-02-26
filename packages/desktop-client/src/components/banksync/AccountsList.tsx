@@ -13,6 +13,7 @@ type AccountsListProps = {
   hoveredAccount?: string | null;
   onHover: (id: AccountEntity['id'] | null) => void;
   onAction: (account: AccountEntity, action: 'link' | 'edit') => void;
+  canWrite?: boolean;
 };
 
 export function AccountsList({
@@ -20,6 +21,7 @@ export function AccountsList({
   hoveredAccount,
   onHover,
   onAction,
+  canWrite = true,
 }: AccountsListProps) {
   const locale = useLocale();
 
@@ -44,6 +46,7 @@ export function AccountsList({
             onHover={onHover}
             onAction={onAction}
             locale={locale}
+            canWrite={canWrite}
           />
         );
       })}

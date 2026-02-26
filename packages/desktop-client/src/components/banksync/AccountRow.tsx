@@ -19,10 +19,11 @@ type AccountRowProps = {
   onHover: (id: AccountEntity['id'] | null) => void;
   onAction: (account: AccountEntity, action: 'link' | 'edit') => void;
   locale: Locale;
+  canWrite?: boolean;
 };
 
 export const AccountRow = memo(
-  ({ account, hovered, onHover, onAction, locale }: AccountRowProps) => {
+  ({ account, hovered, onHover, onAction, locale, canWrite = true }: AccountRowProps) => {
     const backgroundFocus = hovered;
 
     const lastSyncString = tsToRelativeTime(account.last_sync, locale, {
@@ -99,7 +100,7 @@ export const AccountRow = memo(
           ''
         )}
 
-        {account.account_sync_source ? (
+        {canWrite && (account.account_sync_source ? (
           <Cell name="edit" plain style={{ paddingRight: '10px' }}>
             <Button onPress={() => onAction(account, 'edit')}>
               <Trans>Edit</Trans>
@@ -111,7 +112,7 @@ export const AccountRow = memo(
               <Trans>Link account</Trans>
             </Button>
           </Cell>
-        )}
+        ))}
       </Row>
     );
   },

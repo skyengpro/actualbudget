@@ -19,6 +19,7 @@ import { SecondaryButtons } from './SecondaryButtons';
 import { useSidebar } from './SidebarProvider';
 import { ToggleButton } from './ToggleButton';
 
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
 import { useLocalPref } from '@desktop-client/hooks/useLocalPref';
 import { useResizeObserver } from '@desktop-client/hooks/useResizeObserver';
@@ -32,6 +33,7 @@ export function Sidebar() {
   const dispatch = useDispatch();
   const sidebar = useSidebar();
   const { width } = useResponsive();
+  const { canManageAccounts } = useFilePermission();
   const [isFloating = false, setFloatingSidebarPref] =
     useGlobalPref('floatingSidebar');
 
@@ -124,11 +126,13 @@ export function Sidebar() {
 
           <Accounts />
 
-          <SecondaryButtons
-            buttons={[
-              { title: t('Add account'), Icon: SvgAdd, onClick: onAddAccount },
-            ]}
-          />
+          {canManageAccounts && (
+            <SecondaryButtons
+              buttons={[
+                { title: t('Add account'), Icon: SvgAdd, onClick: onAddAccount },
+              ]}
+            />
+          )}
         </View>
       </View>
     </Resizable>

@@ -24,6 +24,7 @@ import {
   SelectCell,
   TableHeader,
 } from '@desktop-client/components/table';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import {
   SelectedProvider,
   useSelected,
@@ -86,6 +87,7 @@ export const ManagePayees = ({
   const [orphanedOnly, setOrphanedOnly] = useState(false);
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { canWrite } = useFilePermission();
 
   const filteredPayees = useMemo(() => {
     let filtered = payees;
@@ -215,40 +217,42 @@ export const ManagePayees = ({
           padding: '0 0 15px',
         }}
       >
-        <View style={{ flexShrink: 0 }}>
-          <Button
-            ref={triggerRef}
-            variant="bare"
-            style={{ marginRight: 10 }}
-            isDisabled={buttonsDisabled}
-            onPress={() => setMenuOpen(true)}
-          >
-            {buttonsDisabled
-              ? t('No payees selected')
-              : t('{{count}} payees', {
-                  count: selected.items.size,
-                })}
-            <SvgExpandArrow width={8} height={8} style={{ marginLeft: 5 }} />
-          </Button>
+        {canWrite && (
+          <View style={{ flexShrink: 0 }}>
+            <Button
+              ref={triggerRef}
+              variant="bare"
+              style={{ marginRight: 10 }}
+              isDisabled={buttonsDisabled}
+              onPress={() => setMenuOpen(true)}
+            >
+              {buttonsDisabled
+                ? t('No payees selected')
+                : t('{{count}} payees', {
+                    count: selected.items.size,
+                  })}
+              <SvgExpandArrow width={8} height={8} style={{ marginLeft: 5 }} />
+            </Button>
 
-          <Popover
-            triggerRef={triggerRef}
-            isOpen={menuOpen}
-            placement="bottom start"
-            style={{ width: 250 }}
-            onOpenChange={() => setMenuOpen(false)}
-          >
-            <PayeeMenu
-              payeesById={payeesById}
-              selectedPayees={selected.items}
-              onClose={() => setMenuOpen(false)}
-              onDelete={onDelete}
-              onMerge={onMerge}
-              onFavorite={onFavorite}
-              onLearn={onLearn}
-            />
-          </Popover>
-        </View>
+            <Popover
+              triggerRef={triggerRef}
+              isOpen={menuOpen}
+              placement="bottom start"
+              style={{ width: 250 }}
+              onOpenChange={() => setMenuOpen(false)}
+            >
+              <PayeeMenu
+                payeesById={payeesById}
+                selectedPayees={selected.items}
+                onClose={() => setMenuOpen(false)}
+                onDelete={onDelete}
+                onMerge={onMerge}
+                onFavorite={onFavorite}
+                onLearn={onLearn}
+              />
+            </Popover>
+          </View>
+        )}
         <View
           style={{
             flexShrink: 0,

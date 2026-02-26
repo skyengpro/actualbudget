@@ -17,6 +17,7 @@ import * as Platform from 'loot-core/shared/platform';
 
 import { closeBudget } from '@desktop-client/budgetfiles/budgetfilesSlice';
 import { useContextMenu } from '@desktop-client/hooks/useContextMenu';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useMetadataPref } from '@desktop-client/hooks/useMetadataPref';
 import { useNavigate } from '@desktop-client/hooks/useNavigate';
 import { pushModal } from '@desktop-client/modals/modalsSlice';
@@ -59,12 +60,15 @@ export function BudgetName({ children }: BudgetNameProps) {
 function EditableBudgetName() {
   const { t } = useTranslation();
   const [budgetName, setBudgetNamePref] = useMetadataPref('budgetName');
+  const [budgetId] = useMetadataPref('id');
+  const [cloudFileId] = useMetadataPref('cloudFileId');
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [editing, setEditing] = useState(false);
   const { setMenuOpen, menuOpen, handleContextMenu, resetPosition, position } =
     useContextMenu();
+  const { canAccessSettings, canShare } = useFilePermission();
 
   function onMenuSelect(type: string) {
     setMenuOpen(false);
@@ -75,6 +79,21 @@ function EditableBudgetName() {
         break;
       case 'settings':
         void navigate('/settings');
+        break;
+      case 'share':
+        if (cloudFileId) {
+          dispatch(
+            pushModal({
+              modal: {
+                name: 'share-file',
+                options: {
+                  fileId: cloudFileId,
+                  fileName: budgetName || t('Unnamed'),
+                },
+              },
+            }),
+          );
+        }
         break;
       case 'loadBackup':
         if (isElectron()) {
@@ -94,7 +113,8 @@ function EditableBudgetName() {
 
   const items = [
     { name: 'rename', text: t('Rename budget') },
-    { name: 'settings', text: t('Settings') },
+    canAccessSettings ? { name: 'settings', text: t('Settings') } : null,
+    cloudFileId && canShare ? { name: 'share', text: t('Share budget…') } : null,
     isElectron() ? { name: 'loadBackup', text: t('Load Backup…') } : null,
     { name: 'close', text: t('Switch file') },
   ].filter(item => item !== null);

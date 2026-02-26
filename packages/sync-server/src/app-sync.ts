@@ -19,6 +19,7 @@ import {
   validateUploadedFile,
 } from './app-sync/validation';
 import { config } from './load-config';
+import { FilePermissions } from './services/file-permission-service';
 import * as UserService from './services/user-service';
 import * as simpleSync from './sync-simple';
 import {
@@ -74,13 +75,26 @@ const verifyFileExists = (fileId, filesService, res, errorObject) => {
   }
 };
 
-function requireFileAccess(file: File, userId: string) {
-  const isOwner = file.owner === userId;
+function requireFileAccess(
+  file: File,
+  userId: string,
+  requireWrite: boolean = false,
+) {
   const isServerAdmin = isAdmin(userId);
-  if (isOwner || isServerAdmin) {
+  if (isServerAdmin) {
     return null;
   }
-  if (UserService.countUserAccess(file.id, userId) > 0) {
+
+  if (requireWrite) {
+    // For write operations, check EDITOR permission
+    if (FilePermissions.canWrite(userId, file.id)) {
+      return null;
+    }
+    return 'write-access-not-allowed';
+  }
+
+  // For read operations, check VIEWER permission
+  if (FilePermissions.canRead(userId, file.id)) {
     return null;
   }
   return 'file-access-not-allowed';
@@ -125,10 +139,15 @@ app.post('/sync', async (req, res): Promise<void> => {
     return;
   }
 
-  const fileAccessError = requireFileAccess(currentFile, res.locals.user_id);
+  // Sync requires write permission (at least EDITOR role)
+  const fileAccessError = requireFileAccess(
+    currentFile,
+    res.locals.user_id,
+    true,
+  );
   if (fileAccessError) {
     res.status(403);
-    res.send(fileAccessError);
+    res.send('file-access-not-allowed');
     return;
   }
 
@@ -288,12 +307,13 @@ app.post('/upload-user-file', async (req, res) => {
     }
   }
 
+  // Upload requires write permission (at least EDITOR role)
   const fileAccessError = currentFile
-    ? requireFileAccess(currentFile, res.locals.user_id)
+    ? requireFileAccess(currentFile, res.locals.user_id, true)
     : null;
   if (fileAccessError) {
     res.status(403);
-    res.send(fileAccessError);
+    res.send('file-access-not-allowed');
     return;
   }
 
@@ -502,10 +522,10 @@ app.post('/delete-user-file', (req, res) => {
     return;
   }
 
-  const fileAccessError = requireFileAccess(file, res.locals.user_id);
-  if (fileAccessError) {
+  // Delete requires OWNER permission
+  if (!FilePermissions.canDelete(res.locals.user_id, file.id)) {
     res.status(403);
-    res.send(fileAccessError);
+    res.send('file-access-not-allowed');
     return;
   }
 

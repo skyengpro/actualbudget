@@ -13,6 +13,7 @@ import { TemplatesTable } from './TemplatesTable';
 
 import { Search } from '@desktop-client/components/common/Search';
 import { Page } from '@desktop-client/components/Page';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useTemplates } from '@desktop-client/hooks/useTemplates';
 import { pushModal } from '@desktop-client/modals/modalsSlice';
 import { useDispatch } from '@desktop-client/redux';
@@ -21,6 +22,7 @@ export function Templates() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [filter, setFilter] = useState('');
+  const { canWrite } = useFilePermission();
 
   const onEdit = useCallback(
     (id: TransactionTemplateEntity['id']) => {
@@ -68,7 +70,7 @@ export function Templates() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          padding: '0 0 15px',
+          padding: '15px 0',
         }}
       >
         <View
@@ -84,9 +86,11 @@ export function Templates() {
             onChange={setFilter}
           />
         </View>
-        <Button variant="primary" onPress={onAdd}>
-          <Trans>Add template</Trans>
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onPress={onAdd}>
+            <Trans>Add template</Trans>
+          </Button>
+        )}
       </View>
 
       {isLoading ? (

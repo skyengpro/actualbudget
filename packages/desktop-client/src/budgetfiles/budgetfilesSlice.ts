@@ -90,6 +90,8 @@ export const loadBudget = createAppAsyncThunk(
     } else {
       dispatch(closeModal());
       await dispatch(loadPrefs());
+      // Load all files to get user access information for permissions
+      await dispatch(loadAllFiles());
     }
 
     dispatch(setAppState({ loadingText: null }));

@@ -32,6 +32,7 @@ import { accountQueries } from '@desktop-client/accounts';
 import { getLatestAppVersion, sync } from '@desktop-client/app/appSlice';
 import { ProtectedRoute } from '@desktop-client/auth/ProtectedRoute';
 import { Permissions } from '@desktop-client/auth/types';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
 import { useLocalPref } from '@desktop-client/hooks/useLocalPref';
 import { useMetaThemeColor } from '@desktop-client/hooks/useMetaThemeColor';
@@ -72,6 +73,43 @@ function WideNotSupported({
     }
   }, [isNarrowWidth, navigate, redirectTo]);
   return isNarrowWidth ? children : null;
+}
+
+function ReadOnlyBanner() {
+  const { t } = useTranslation();
+  const { canWrite, userFileRole } = useFilePermission();
+
+  if (canWrite) {
+    return null;
+  }
+
+  return (
+    <View
+      style={{
+        backgroundColor: theme.warningBackground,
+        color: theme.warningText,
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontWeight: 500,
+        borderBottom: `1px solid ${theme.warningBorder}`,
+      }}
+    >
+      {t('You have view-only access to this budget. Changes will not be saved.')}
+    </View>
+  );
+}
+
+function SettingsRoute({ children }: { children: ReactElement }) {
+  const { canAccessSettings } = useFilePermission();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!canAccessSettings) {
+      void navigate('/budget');
+    }
+  }, [canAccessSettings, navigate]);
+
+  return canAccessSettings ? children : null;
 }
 
 function RouterBehaviors() {
@@ -238,6 +276,7 @@ export function FinancesApp() {
                   zIndex: 1000,
                 }}
               />
+              <ReadOnlyBanner />
               <Notifications />
               <BankSyncStatus />
 
@@ -318,7 +357,14 @@ export function FinancesApp() {
                   }
                 />
                 <Route path="/tags" element={<ManageTagsPage />} />
-                <Route path="/settings" element={<Settings />} />
+                <Route
+                  path="/settings"
+                  element={
+                    <SettingsRoute>
+                      <Settings />
+                    </SettingsRoute>
+                  }
+                />
 
                 <Route
                   path="/gocardless/link"

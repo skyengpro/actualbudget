@@ -14,6 +14,7 @@ import { AccountsList } from './AccountsList';
 import { MOBILE_NAV_HEIGHT } from '@desktop-client/components/mobile/MobileNavTabs';
 import { Page } from '@desktop-client/components/Page';
 import { useAccounts } from '@desktop-client/hooks/useAccounts';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
 import { pushModal } from '@desktop-client/modals/modalsSlice';
 import { useDispatch } from '@desktop-client/redux';
@@ -42,6 +43,7 @@ export function BankSync() {
   const { data: accounts = [] } = useAccounts();
   const dispatch = useDispatch();
   const { isNarrowWidth } = useResponsive();
+  const { canWrite } = useFilePermission();
 
   const [hoveredAccount, setHoveredAccount] = useState<
     AccountEntity['id'] | null
@@ -142,6 +144,7 @@ export function BankSync() {
                   hoveredAccount={hoveredAccount}
                   onHover={onHover}
                   onAction={onAction}
+                  canWrite={canWrite}
                 />
               </View>
             </View>

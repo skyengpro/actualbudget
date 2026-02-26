@@ -616,6 +616,13 @@ export type Modal =
         amount: number;
         onPaid: () => void;
       };
+    }
+  | {
+      name: 'share-file';
+      options: {
+        fileId: string;
+        fileName: string;
+      };
     };
 
 type OpenAccountCloseModalPayload = {

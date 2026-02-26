@@ -219,24 +219,27 @@ export function useFormat(): UseFormatResult {
     ],
   );
 
+  // Always use 2 decimal places for internal storage conversion
+  // Actual stores all amounts as integers representing cents (value * 100)
   const toAmount = useCallback(
-    (value: number) => integerToAmount(value, activeCurrency.decimalPlaces),
-    [activeCurrency.decimalPlaces],
+    (value: number) => integerToAmount(value, 2),
+    [],
   );
 
   const fromAmount = useCallback(
-    (value: number) => amountToInteger(value, activeCurrency.decimalPlaces),
-    [activeCurrency.decimalPlaces],
+    (value: number) => amountToInteger(value, 2),
+    [],
   );
 
   const forEdit = useCallback(
     (value: IntegerAmount) => {
       const amount = toAmount(value);
-      const decimalPlaces =
+      // Use currency's decimal places for display, but conversion already uses 2
+      const displayDecimalPlaces =
         hideFractionPref === 'true' ? 0 : activeCurrency.decimalPlaces;
       const editFormatter = getNumberFormat({
         format: numberFormatConfig.format,
-        decimalPlaces,
+        decimalPlaces: displayDecimalPlaces,
       }).formatter;
       return editFormatter.format(amount);
     },

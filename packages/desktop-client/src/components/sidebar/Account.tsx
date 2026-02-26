@@ -42,6 +42,7 @@ import type {
 import { CellValue } from '@desktop-client/components/spreadsheet/CellValue';
 import { useContextMenu } from '@desktop-client/hooks/useContextMenu';
 import { useDragRef } from '@desktop-client/hooks/useDragRef';
+import { useFilePermission } from '@desktop-client/hooks/useFilePermission';
 import { useIsTestEnv } from '@desktop-client/hooks/useIsTestEnv';
 import { useNotes } from '@desktop-client/hooks/useNotes';
 import { useSyncedPref } from '@desktop-client/hooks/useSyncedPref';
@@ -138,6 +139,7 @@ export function Account<FieldName extends SheetFields<'account'>>({
   const needsTooltip = !!account?.id && !isTouchDevice;
   const reopenAccount = useReopenAccountMutation();
   const updateAccount = useUpdateAccountMutation();
+  const { canManageAccounts } = useFilePermission();
 
   const accountRow = (
     <View
@@ -279,10 +281,12 @@ export function Account<FieldName extends SheetFields<'account'>>({
                 }}
                 items={[
                   { name: 'rename', text: t('Rename') },
-                  account.closed
-                    ? { name: 'reopen', text: t('Reopen') }
-                    : { name: 'close', text: t('Close') },
-                ]}
+                  canManageAccounts
+                    ? account.closed
+                      ? { name: 'reopen', text: t('Reopen') }
+                      : { name: 'close', text: t('Close') }
+                    : null,
+                ].filter(Boolean)}
               />
             </Popover>
           )}
