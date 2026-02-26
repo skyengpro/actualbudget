@@ -15,7 +15,6 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { Text } from '@actual-app/components/text';
 
-import { integerToCurrency } from 'loot-core/shared/util';
 import * as monthUtils from 'loot-core/shared/months';
 
 import { useFormat } from '@desktop-client/hooks/useFormat';
@@ -78,7 +77,7 @@ export function MoMComparisonChart({ data }: MoMComparisonChartProps) {
             width={80}
           />
           <Tooltip
-            content={<CustomTooltip />}
+            content={<CustomTooltip format={format} />}
             cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
           />
           <Bar dataKey="amount" radius={[4, 4, 0, 0]} maxBarSize={50}>
@@ -98,9 +97,11 @@ export function MoMComparisonChart({ data }: MoMComparisonChartProps) {
 function CustomTooltip({
   active,
   payload,
+  format,
 }: {
   active?: boolean;
   payload?: Array<{ payload: MonthlyData & { average: number } }>;
+  format: ReturnType<typeof useFormat>;
 }) {
   const { t } = useTranslation();
 
@@ -128,12 +129,12 @@ function CustomTooltip({
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 20 }}>
           <Text style={{ color: theme.pageTextSubdued }}>{t('Spending:')}</Text>
           <Text style={{ fontWeight: 600 }}>
-            {integerToCurrency(data.amount)}
+            {format(data.amount, 'financial')}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 20 }}>
           <Text style={{ color: theme.pageTextSubdued }}>{t('Average:')}</Text>
-          <Text>{integerToCurrency(Math.round(data.average))}</Text>
+          <Text>{format(Math.round(data.average), 'financial')}</Text>
         </View>
         <View
           style={{

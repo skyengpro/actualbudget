@@ -16,7 +16,6 @@ import { View } from '@actual-app/components/view';
 import { Text } from '@actual-app/components/text';
 import { styles } from '@actual-app/components/styles';
 
-import { integerToCurrency } from 'loot-core/shared/util';
 import * as monthUtils from 'loot-core/shared/months';
 
 import { useFormat } from '@desktop-client/hooks/useFormat';
@@ -82,7 +81,7 @@ export function CategoryTrendsChart({ data, months }: CategoryTrendsChartProps) 
             tickFormatter={value => format(Math.round(value), 'financial-no-decimals')}
             width={60}
           />
-          <Tooltip content={<CustomTooltip categories={data} />} />
+          <Tooltip content={<CustomTooltip categories={data} format={format} />} />
           <Legend
             content={<CustomLegend categories={data} />}
             verticalAlign="bottom"
@@ -143,11 +142,13 @@ function CustomTooltip({
   payload,
   label,
   categories,
+  format,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey: string; value: number; color: string }>;
   label?: string;
   categories: CategoryTrendData[];
+  format: ReturnType<typeof useFormat>;
 }) {
   if (!active || !payload || payload.length === 0) {
     return null;
@@ -195,7 +196,7 @@ function CustomTooltip({
                 </Text>
               </View>
               <Text style={{ fontSize: 12, ...styles.monoText }}>
-                {integerToCurrency(Math.round(entry.value))}
+                {format(Math.round(entry.value), 'financial')}
               </Text>
             </View>
           );

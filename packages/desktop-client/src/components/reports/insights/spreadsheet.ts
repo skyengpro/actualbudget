@@ -51,25 +51,39 @@ export function createSpendingInsightsSpreadsheet({
   startDate,
   endDate,
   months,
+  categoryGroupId,
+  categoryId,
 }: {
   startDate: string;
   endDate: string;
   months: number;
+  categoryGroupId?: string | null;
+  categoryId?: string | null;
 }) {
   return async (
     spreadsheet: ReturnType<typeof useSpreadsheet>,
     setData: (data: InsightsData) => void,
   ) => {
+    // Build filter conditions
+    const filterConditions: Array<Record<string, unknown>> = [
+      { date: { $gte: `${startDate}-01` } },
+      { date: { $lte: monthUtils.getMonthEnd(endDate) } },
+      { amount: { $lt: 0 } }, // Only expenses
+      { 'account.offbudget': false },
+      { 'payee.transfer_acct': null }, // Exclude transfers
+    ];
+
+    // Add category filter
+    if (categoryId) {
+      filterConditions.push({ 'category.id': categoryId });
+    } else if (categoryGroupId) {
+      filterConditions.push({ 'category.group.id': categoryGroupId });
+    }
+
     // Query all transactions in the date range (expenses only)
     const query = q('transactions')
       .filter({
-        $and: [
-          { date: { $gte: `${startDate}-01` } },
-          { date: { $lte: monthUtils.getMonthEnd(endDate) } },
-          { amount: { $lt: 0 } }, // Only expenses
-          { 'account.offbudget': false },
-          { 'payee.transfer_acct': null }, // Exclude transfers
-        ],
+        $and: filterConditions,
       })
       .select([
         'id',

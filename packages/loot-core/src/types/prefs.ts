@@ -86,6 +86,9 @@ export type LocalPrefs = Partial<{
   reportsViewLabel: boolean;
   sidebarWidth: number;
   'mobile.showSpentColumn': boolean;
+  'forecast.lowBalanceThreshold': number;
+  'forecast.forecastDays': 30 | 60 | 90;
+  'forecast.baseCurrency': string;
 }>;
 
 export type Theme =

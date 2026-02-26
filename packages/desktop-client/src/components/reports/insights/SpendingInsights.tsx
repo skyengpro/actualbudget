@@ -8,10 +8,12 @@ import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import * as monthUtils from 'loot-core/shared/months';
-import { integerToCurrency } from 'loot-core/shared/util';
 
+import { CurrencyAmount } from '@desktop-client/components/common/CurrencyAmount';
 import { Page, PageHeader } from '@desktop-client/components/Page';
 import { useReport } from '@desktop-client/components/reports/useReport';
+import { useCategories } from '@desktop-client/hooks/useCategories';
+import { useFormat } from '@desktop-client/hooks/useFormat';
 
 import { CategoryTrendsChart } from './CategoryTrendsChart';
 import { MoMComparisonChart } from './MoMComparisonChart';
@@ -21,7 +23,14 @@ import { TopPayeesChart } from './TopPayeesChart';
 
 export function SpendingInsights() {
   const { t } = useTranslation();
+  const format = useFormat();
   const [months, setMonths] = useState(6);
+  const [categoryGroupId, setCategoryGroupId] = useState<string | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+
+  // Get categories data
+  const { data: categoriesData } = useCategories();
+  const categoryGroups = categoriesData?.grouped || [];
 
   // Ensure months is always a valid number
   const validMonths = Number.isFinite(months) && months > 0 ? months : 6;
@@ -38,8 +47,10 @@ export function SpendingInsights() {
         startDate,
         endDate,
         months: validMonths,
+        categoryGroupId,
+        categoryId,
       }),
-    [startDate, endDate, validMonths],
+    [startDate, endDate, validMonths, categoryGroupId, categoryId],
   );
 
   const data = useReport('spending-insights', getInsightsData);
@@ -50,11 +61,51 @@ export function SpendingInsights() {
     ['12', t('Last 12 months')],
   ];
 
+  // Build category group options
+  const categoryGroupOptions: Array<[string, string]> = useMemo(() => {
+    const options: Array<[string, string]> = [['', t('All Groups')]];
+    for (const group of categoryGroups) {
+      if (!group.hidden) {
+        options.push([group.id, group.name]);
+      }
+    }
+    return options;
+  }, [categoryGroups, t]);
+
+  // Build category options based on selected group
+  const categoryOptions: Array<[string, string]> = useMemo(() => {
+    const options: Array<[string, string]> = [['', t('All Categories')]];
+
+    const groupsToShow = categoryGroupId
+      ? categoryGroups.filter(g => g.id === categoryGroupId)
+      : categoryGroups;
+
+    for (const group of groupsToShow) {
+      if (!group.hidden) {
+        for (const cat of group.categories || []) {
+          if (!cat.hidden) {
+            options.push([cat.id, categoryGroupId ? cat.name : `${group.name}: ${cat.name}`]);
+          }
+        }
+      }
+    }
+    return options;
+  }, [categoryGroups, categoryGroupId, t]);
+
   const handleMonthsChange = (value: string) => {
     const num = parseInt(value, 10);
     if (Number.isFinite(num) && num > 0) {
       setMonths(num);
     }
+  };
+
+  const handleCategoryGroupChange = (value: string) => {
+    setCategoryGroupId(value || null);
+    setCategoryId(null); // Reset category when group changes
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryId(value || null);
   };
 
   return (
@@ -67,15 +118,36 @@ export function SpendingInsights() {
           alignItems: 'center',
           marginTop: 10,
           marginBottom: 20,
-          gap: 12,
+          gap: 24,
+          flexWrap: 'wrap',
         }}
       >
-        <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Time range:')}</Text>
-        <Select
-          options={monthOptions}
-          value={String(validMonths)}
-          onChange={handleMonthsChange}
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Time range:')}</Text>
+          <Select
+            options={monthOptions}
+            value={String(validMonths)}
+            onChange={handleMonthsChange}
+          />
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Group:')}</Text>
+          <Select
+            options={categoryGroupOptions}
+            value={categoryGroupId || ''}
+            onChange={handleCategoryGroupChange}
+          />
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Category:')}</Text>
+          <Select
+            options={categoryOptions}
+            value={categoryId || ''}
+            onChange={handleCategoryChange}
+          />
+        </View>
       </View>
 
       {!data ? (
@@ -192,19 +264,6 @@ function SummaryCard({
   subtitle: string;
   isChange?: boolean;
 }) {
-  const isPositive = value > 0;
-  const isNegative = value < 0;
-
-  let valueColor = theme.pageText;
-  if (isChange) {
-    if (isPositive) valueColor = theme.errorText; // More spending = bad
-    if (isNegative) valueColor = theme.noticeTextLight; // Less spending = good
-  }
-
-  const displayValue = isChange
-    ? `${isPositive ? '+' : ''}${integerToCurrency(value)}`
-    : integerToCurrency(Math.abs(value));
-
   return (
     <View
       style={{
@@ -225,16 +284,19 @@ function SummaryCard({
       >
         {title}
       </Text>
-      <Text
-        style={{
+      <CurrencyAmount
+        value={isChange ? value : Math.abs(value)}
+        showSign={isChange}
+        colorize={isChange}
+        amountStyle={{
           fontSize: 24,
           fontWeight: 700,
-          color: valueColor,
-          ...styles.monoText,
         }}
-      >
-        {displayValue}
-      </Text>
+        symbolStyle={{
+          fontSize: 14,
+          opacity: 0.7,
+        }}
+      />
       <Text
         style={{
           fontSize: 11,

@@ -185,11 +185,13 @@ export function useFormat(): UseFormatResult {
         decimalPlaces: displayDecimalPlaces,
       }).formatter;
 
+      // Always use 2 decimal places for conversion since that's how Actual stores amounts internally
+      // The display decimal places are controlled by the formatter
       const { numericValue, formattedString } = format(
         value,
         type,
         intlFormatter,
-        activeCurrency.decimalPlaces,
+        2, // Storage format is always 2 decimal places (cents)
       );
 
       let styledValue = formattedString;

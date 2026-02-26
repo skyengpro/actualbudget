@@ -6,6 +6,7 @@ export type AccountEntity = {
   sort_order: number;
   last_reconciled: string | null;
   tombstone: 0 | 1;
+  currency?: string; // ISO 4217 currency code (e.g., 'USD', 'EUR', 'XAF') - defaults to 'USD'
 
   // Sync fields
   account_id: string | null;

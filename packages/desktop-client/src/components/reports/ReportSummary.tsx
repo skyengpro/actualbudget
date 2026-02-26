@@ -11,7 +11,7 @@ import type { balanceTypeOpType, DataEntity } from 'loot-core/types/models';
 
 import { ReportOptions } from './ReportOptions';
 
-import { FinancialText } from '@desktop-client/components/FinancialText';
+import { CurrencyAmount } from '@desktop-client/components/common/CurrencyAmount';
 import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
 import { useFormat } from '@desktop-client/hooks/useFormat';
 import { useLocale } from '@desktop-client/hooks/useLocale';
@@ -115,18 +115,19 @@ export function ReportSummary({
               ? t('TOTAL DEPOSITS')
               : t('NET {{net}}', { net })}
         </Text>
-        <FinancialText
-          style={{
-            ...styles.veryLargeText,
-            alignItems: 'center',
-            marginBottom: 2,
-            fontWeight: 800,
-          }}
-        >
-          <PrivacyFilter>
-            {format(data[balanceTypeOp], 'financial')}
-          </PrivacyFilter>
-        </FinancialText>
+        <PrivacyFilter>
+          <CurrencyAmount
+            value={data[balanceTypeOp]}
+            amountStyle={{
+              ...styles.veryLargeText,
+              fontWeight: 800,
+            }}
+            symbolStyle={{
+              fontSize: 18,
+              opacity: 0.7,
+            }}
+          />
+        </PrivacyFilter>
         <Text style={{ fontWeight: 600 }}>
           <Trans>For this time period</Trans>
         </Text>
@@ -154,18 +155,21 @@ export function ReportSummary({
               ? t('AVERAGE DEPOSIT')
               : t('AVERAGE NET')}
         </Text>
-        <FinancialText
-          style={{
-            ...styles.veryLargeText,
-            alignItems: 'center',
-            marginBottom: 2,
-            fontWeight: 800,
-          }}
-        >
-          <PrivacyFilter>
-            {!isNaN(average) && format(average, 'financial')}
-          </PrivacyFilter>
-        </FinancialText>
+        <PrivacyFilter>
+          {!isNaN(average) && (
+            <CurrencyAmount
+              value={average}
+              amountStyle={{
+                ...styles.veryLargeText,
+                fontWeight: 800,
+              }}
+              symbolStyle={{
+                fontSize: 18,
+                opacity: 0.7,
+              }}
+            />
+          )}
+        </PrivacyFilter>
         <Text style={{ fontWeight: 600 }}>
           <Trans>
             Per{' '}

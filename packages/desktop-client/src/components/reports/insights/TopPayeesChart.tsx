@@ -7,7 +7,7 @@ import { View } from '@actual-app/components/view';
 import { Text } from '@actual-app/components/text';
 import { styles } from '@actual-app/components/styles';
 
-import { integerToCurrency } from 'loot-core/shared/util';
+import { useFormat } from '@desktop-client/hooks/useFormat';
 
 import type { PayeeData } from './spreadsheet';
 
@@ -28,6 +28,7 @@ const COLORS = [
 
 export function TopPayeesChart({ data }: TopPayeesChartProps) {
   const { t } = useTranslation();
+  const format = useFormat();
 
   if (data.length === 0) {
     return (
@@ -61,7 +62,7 @@ export function TopPayeesChart({ data }: TopPayeesChartProps) {
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip format={format} />} />
           </PieChart>
         </ResponsiveContainer>
       </View>
@@ -104,7 +105,7 @@ export function TopPayeesChart({ data }: TopPayeesChartProps) {
                 ...styles.monoText,
               }}
             >
-              {integerToCurrency(payee.amount)}
+              {format(payee.amount, 'financial')}
             </Text>
           </View>
         ))}
@@ -127,9 +128,11 @@ export function TopPayeesChart({ data }: TopPayeesChartProps) {
 function CustomTooltip({
   active,
   payload,
+  format,
 }: {
   active?: boolean;
   payload?: Array<{ payload: PayeeData }>;
+  format: ReturnType<typeof useFormat>;
 }) {
   if (!active || !payload || payload.length === 0) {
     return null;
@@ -149,7 +152,7 @@ function CustomTooltip({
     >
       <Text style={{ fontWeight: 600, marginBottom: 4 }}>{data.name}</Text>
       <Text style={{ ...styles.monoText }}>
-        {integerToCurrency(data.amount)}
+        {format(data.amount, 'financial')}
       </Text>
       <Text style={{ fontSize: 11, color: theme.pageTextSubdued }}>
         {data.percentage}% of total

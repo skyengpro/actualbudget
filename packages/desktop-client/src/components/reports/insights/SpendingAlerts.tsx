@@ -7,7 +7,7 @@ import { View } from '@actual-app/components/view';
 import { Text } from '@actual-app/components/text';
 import { styles } from '@actual-app/components/styles';
 
-import { integerToCurrency } from 'loot-core/shared/util';
+import { useFormat } from '@desktop-client/hooks/useFormat';
 
 import type { InsightAlert } from './spreadsheet';
 
@@ -17,6 +17,7 @@ type SpendingAlertsProps = {
 
 export function SpendingAlerts({ alerts }: SpendingAlertsProps) {
   const { t } = useTranslation();
+  const format = useFormat();
 
   if (alerts.length === 0) {
     return (
@@ -31,13 +32,13 @@ export function SpendingAlerts({ alerts }: SpendingAlertsProps) {
   return (
     <View style={{ gap: 10 }}>
       {alerts.map((alert, index) => (
-        <AlertItem key={`${alert.categoryId}-${index}`} alert={alert} />
+        <AlertItem key={`${alert.categoryId}-${index}`} alert={alert} format={format} />
       ))}
     </View>
   );
 }
 
-function AlertItem({ alert }: { alert: InsightAlert }) {
+function AlertItem({ alert, format }: { alert: InsightAlert; format: ReturnType<typeof useFormat> }) {
   const { t } = useTranslation();
 
   const isIncrease = alert.type === 'increase' || alert.percentChange > 0;
@@ -95,7 +96,7 @@ function AlertItem({ alert }: { alert: InsightAlert }) {
               ...styles.monoText,
             }}
           >
-            {integerToCurrency(Math.abs(alert.amount))}
+            {format(Math.abs(alert.amount), 'financial')}
           </Text>
           <Text
             style={{

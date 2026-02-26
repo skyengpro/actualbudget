@@ -12,8 +12,9 @@ import { View } from '@actual-app/components/view';
 
 import { send } from 'loot-core/platform/client/connection';
 import { q } from 'loot-core/shared/query';
-import { amountToInteger, integerToCurrency } from 'loot-core/shared/util';
 import type { TransactionTemplateEntity } from 'loot-core/types/models';
+
+import { useFormat } from '@desktop-client/hooks/useFormat';
 
 import {
   Modal,
@@ -37,6 +38,7 @@ type TemplateEditModalProps = Extract<
 export function TemplateEditModal({ id }: TemplateEditModalProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const format = useFormat();
   const adding = id == null;
 
   const [name, setName] = useState('');
@@ -60,7 +62,7 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
             setPayeeId(template.payee || null);
             setCategoryId(template.category || null);
             setAmount(
-              template.amount != null ? integerToCurrency(template.amount) : '',
+              template.amount != null ? format.forEdit(template.amount) : '',
             );
             setNotes(template.notes || '');
           }
@@ -82,7 +84,7 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
     }
 
     const amountValue = amount.trim()
-      ? amountToInteger(parseFloat(amount.replace(/[^0-9.-]/g, '')))
+      ? format.fromEdit(amount, null)
       : null;
 
     const template = {

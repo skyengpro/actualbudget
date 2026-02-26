@@ -15,7 +15,7 @@ import {
   useEnvelopeSheetName,
   useEnvelopeSheetValue,
 } from '@desktop-client/components/budget/envelope/EnvelopeBudgetComponents';
-import { FinancialText } from '@desktop-client/components/FinancialText';
+import { CurrencyAmount } from '@desktop-client/components/common/CurrencyAmount';
 import { PrivacyFilter } from '@desktop-client/components/PrivacyFilter';
 import { useFormat } from '@desktop-client/hooks/useFormat';
 import { envelopeBudget } from '@desktop-client/spreadsheet/bindings';
@@ -80,31 +80,43 @@ export function ToBudgetAmount({
               onClick={onClick}
               onContextMenu={onContextMenu}
               data-cellname={sheetName}
-              className={css([
-                styles.veryLargeText,
-                {
+              className={css({
+                userSelect: 'none',
+                cursor: 'pointer',
+                marginBottom: -1,
+                borderBottom: '1px solid transparent',
+                ':hover': {
+                  borderColor: isPositive
+                    ? theme.toBudgetPositive
+                    : isNegative
+                      ? theme.toBudgetNegative
+                      : theme.toBudgetZero,
+                },
+                ...amountStyle,
+              })}
+            >
+              <CurrencyAmount
+                value={num}
+                colorize
+                amountStyle={{
+                  ...styles.veryLargeText,
                   fontWeight: 400,
-                  userSelect: 'none',
-                  cursor: 'pointer',
                   color: isPositive
                     ? theme.toBudgetPositive
                     : isNegative
                       ? theme.toBudgetNegative
                       : theme.toBudgetZero,
-                  marginBottom: -1,
-                  borderBottom: '1px solid transparent',
-                  ':hover': {
-                    borderColor: isPositive
-                      ? theme.toBudgetPositive
-                      : isNegative
-                        ? theme.toBudgetNegative
-                        : theme.toBudgetZero,
-                  },
-                },
-                amountStyle,
-              ])}
-            >
-              <FinancialText>{format(num, 'financial')}</FinancialText>
+                }}
+                symbolStyle={{
+                  fontSize: 16,
+                  opacity: 0.7,
+                  color: isPositive
+                    ? theme.toBudgetPositive
+                    : isNegative
+                      ? theme.toBudgetNegative
+                      : theme.toBudgetZero,
+                }}
+              />
             </Block>
           </PrivacyFilter>
         </Tooltip>

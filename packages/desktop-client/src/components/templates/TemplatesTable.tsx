@@ -5,10 +5,10 @@ import { Button } from '@actual-app/components/button';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
-import { integerToCurrency } from 'loot-core/shared/util';
 import type { TransactionTemplateEntity } from 'loot-core/types/models';
 
 import { useCategories } from '@desktop-client/hooks/useCategories';
+import { useFormat } from '@desktop-client/hooks/useFormat';
 import { usePayees } from '@desktop-client/hooks/usePayees';
 
 type TemplatesTableProps = {
@@ -23,6 +23,7 @@ export const TemplatesTable = memo(function TemplatesTable({
   onDelete,
 }: TemplatesTableProps) {
   const { t } = useTranslation();
+  const format = useFormat();
   const { data: payees = [] } = usePayees();
   const { data: categoriesData } = useCategories();
   const categories = categoriesData?.list || [];
@@ -94,7 +95,7 @@ export const TemplatesTable = memo(function TemplatesTable({
               <td style={{ padding: '10px 12px' }}>{getPayeeName(template.payee)}</td>
               <td style={{ padding: '10px 12px' }}>{getCategoryName(template.category)}</td>
               <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                {template.amount != null ? integerToCurrency(template.amount) : '-'}
+                {template.amount != null ? format(template.amount, 'financial') : '-'}
               </td>
               <td
                 style={{ padding: '10px 12px' }}
