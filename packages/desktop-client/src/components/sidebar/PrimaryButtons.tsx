@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 import {
+  SvgChartArea,
   SvgChartBar,
   SvgCheveronDown,
   SvgCheveronRight,
@@ -41,6 +42,7 @@ export function PrimaryButtons() {
     '/templates',
     '/reimbursements',
     '/reports/insights',
+    '/reports/forecast',
     '/bank-sync',
     '/settings',
     '/tools',
@@ -62,7 +64,8 @@ export function PrimaryButtons() {
         exact
         forceActive={
           location.pathname.startsWith('/reports') &&
-          !location.pathname.startsWith('/reports/insights')
+          !location.pathname.startsWith('/reports/insights') &&
+          !location.pathname.startsWith('/reports/forecast')
         }
       />
       <Item title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
@@ -103,6 +106,12 @@ export function PrimaryButtons() {
             title={t('Insights')}
             Icon={SvgChartBar}
             to="/reports/insights"
+            indent={15}
+          />
+          <SecondaryItem
+            title={t('Forecast')}
+            Icon={SvgChartArea}
+            to="/reports/forecast"
             indent={15}
           />
           {isUsingServer && (

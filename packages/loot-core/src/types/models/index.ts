@@ -18,6 +18,7 @@ export type * from './transaction';
 export type * from './transaction-filter';
 export type * from './transaction-template';
 export type * from './reimbursement';
+export type * from './forecast';
 export type * from './user';
 export type * from './user-access';
 export type * from './tags';

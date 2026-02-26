@@ -1,6 +1,7 @@
 import React from 'react';
 import { Route, Routes } from 'react-router';
 
+import { ForecastPage } from '../forecast';
 import { SpendingInsights } from './insights';
 import { BudgetAnalysis } from './reports/BudgetAnalysis';
 import { Calendar } from './reports/Calendar';
@@ -50,6 +51,7 @@ export function ReportRouter() {
       <Route path="/formula" element={<Formula />} />
       <Route path="/formula/:id" element={<Formula />} />
       <Route path="/insights" element={<SpendingInsights />} />
+      <Route path="/forecast" element={<ForecastPage />} />
     </Routes>
   );
 }
