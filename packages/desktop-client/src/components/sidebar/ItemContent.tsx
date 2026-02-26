@@ -42,7 +42,10 @@ export function ItemContent({
     <Link
       variant="internal"
       to={to}
-      style={style}
+      style={{
+        ...style,
+        ...(forceActive ? activeStyle : {}),
+      }}
       activeStyle={activeStyle}
       isExactPathMatch={exact}
     >

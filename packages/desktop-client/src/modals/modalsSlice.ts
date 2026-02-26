@@ -603,6 +603,19 @@ export type Modal =
   | {
       name: 'template-edit';
       options: { id?: string };
+    }
+  | {
+      name: 'reimbursement-edit';
+      options: { id?: string; onSave?: () => void };
+    }
+  | {
+      name: 'reimbursement-pay';
+      options: {
+        id: string;
+        employeeName: string;
+        amount: number;
+        onPaid: () => void;
+      };
     };
 
 type OpenAccountCloseModalPayload = {

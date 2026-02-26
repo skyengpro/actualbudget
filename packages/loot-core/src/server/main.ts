@@ -39,6 +39,7 @@ import { fullSync, setSyncingMode } from './sync';
 import { app as syncApp } from './sync/app';
 import { app as tagsApp } from './tags/app';
 import { app as templatesApp } from './templates/app';
+import { app as reimbursementsApp } from './reimbursements/app';
 import { app as toolsApp } from './tools/app';
 import { app as transactionsApp } from './transactions/app';
 import * as rules from './transactions/transaction-rules';
@@ -152,6 +153,7 @@ app.combine(
   encryptionApp,
   tagsApp,
   templatesApp,
+  reimbursementsApp,
 );
 
 export function getDefaultDocumentDir() {

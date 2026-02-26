@@ -12,6 +12,9 @@ export { MobileScheduleEditPage as ScheduleEdit } from '../mobile/schedules/Mobi
 // TODO: Create mobile version of Templates
 export { Templates } from '../templates';
 
+// TODO: Create mobile version of Reimbursements
+export { Reimbursements } from '../reimbursements';
+
 export { CategoryPage as Category } from '../mobile/budget/CategoryPage';
 export { MobilePayeesPage as Payees } from '../mobile/payees/MobilePayeesPage';
 export { MobilePayeeEditPage as PayeeEdit } from '../mobile/payees/MobilePayeeEditPage';

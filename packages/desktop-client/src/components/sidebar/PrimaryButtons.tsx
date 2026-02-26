@@ -14,6 +14,7 @@ import {
   SvgTag,
   SvgTuning,
   SvgWallet,
+  SvgUserGroup,
 } from '@actual-app/components/icons/v1';
 import { SvgCalendar3 } from '@actual-app/components/icons/v2';
 import { View } from '@actual-app/components/view';
@@ -38,6 +39,7 @@ export function PrimaryButtons() {
     '/payees',
     '/rules',
     '/templates',
+    '/reimbursements',
     '/reports/insights',
     '/bank-sync',
     '/settings',
@@ -53,7 +55,16 @@ export function PrimaryButtons() {
   return (
     <View style={{ flexShrink: 0 }}>
       <Item title={t('Budget')} Icon={SvgWallet} to="/budget" />
-      <Item title={t('Reports')} Icon={SvgReports} to="/reports" exact />
+      <Item
+        title={t('Reports')}
+        Icon={SvgReports}
+        to="/reports"
+        exact
+        forceActive={
+          location.pathname.startsWith('/reports') &&
+          !location.pathname.startsWith('/reports/insights')
+        }
+      />
       <Item title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
       <Item
         title={t('More')}
@@ -80,6 +91,12 @@ export function PrimaryButtons() {
             title={t('Templates')}
             Icon={SvgFileDouble}
             to="/templates"
+            indent={15}
+          />
+          <SecondaryItem
+            title={t('Reimbursements')}
+            Icon={SvgUserGroup}
+            to="/reimbursements"
             indent={15}
           />
           <SecondaryItem

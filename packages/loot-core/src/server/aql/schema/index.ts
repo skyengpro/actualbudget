@@ -209,6 +209,19 @@ export const schema = {
     active: f('boolean', { default: true }),
     tombstone: f('boolean'),
   },
+  reimbursements: {
+    id: f('id'),
+    transaction_id: f('id', { ref: 'transactions' }),
+    payment_transaction_id: f('id', { ref: 'transactions' }),
+    employee_name: f('string', { required: true }),
+    amount: f('integer', { required: true }),
+    status: f('string', { required: true, default: 'pending' }),
+    date_submitted: f('string', { required: true }),
+    date_approved: f('string'),
+    date_paid: f('string'),
+    description: f('string'),
+    tombstone: f('boolean'),
+  },
 };
 
 export const schemaConfig: SchemaConfig = {

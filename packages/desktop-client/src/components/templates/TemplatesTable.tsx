@@ -8,7 +8,6 @@ import { View } from '@actual-app/components/view';
 import { integerToCurrency } from 'loot-core/shared/util';
 import type { TransactionTemplateEntity } from 'loot-core/types/models';
 
-import { Table, Row, Cell } from '@desktop-client/components/table';
 import { useCategories } from '@desktop-client/hooks/useCategories';
 import { usePayees } from '@desktop-client/hooks/usePayees';
 
@@ -24,8 +23,9 @@ export const TemplatesTable = memo(function TemplatesTable({
   onDelete,
 }: TemplatesTableProps) {
   const { t } = useTranslation();
-  const payees = usePayees();
-  const { list: categories } = useCategories();
+  const { data: payees = [] } = usePayees();
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData?.list || [];
 
   const getPayeeName = (id: string | null | undefined) => {
     if (!id) return '-';
@@ -40,71 +40,83 @@ export const TemplatesTable = memo(function TemplatesTable({
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <Table
-        headers={[
-          { name: 'name', width: 200 },
-          { name: 'payee', width: 150 },
-          { name: 'category', width: 150 },
-          { name: 'amount', width: 100 },
-          { name: 'actions', width: 120 },
-        ]}
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.tableBackground,
+        borderRadius: 4,
+        border: `1px solid ${theme.tableBorder}`,
+        overflow: 'hidden',
+      }}
+    >
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          tableLayout: 'fixed',
+        }}
       >
-        <Row
-          style={{
-            fontWeight: 600,
-            backgroundColor: theme.tableHeaderBackground,
-          }}
-        >
-          <Cell value={t('Name')} width={200} />
-          <Cell value={t('Payee')} width={150} />
-          <Cell value={t('Category')} width={150} />
-          <Cell value={t('Amount')} width={100} />
-          <Cell value={t('Actions')} width={120} />
-        </Row>
-        {templates.map(template => (
-          <Row
-            key={template.id}
-            style={{ cursor: 'pointer' }}
-            onClick={() => onEdit(template.id)}
+        <thead>
+          <tr
+            style={{
+              backgroundColor: theme.tableHeaderBackground,
+              borderBottom: `1px solid ${theme.tableBorder}`,
+            }}
           >
-            <Cell value={template.name} width={200} />
-            <Cell value={getPayeeName(template.payee)} width={150} />
-            <Cell value={getCategoryName(template.category)} width={150} />
-            <Cell
-              value={
-                template.amount != null
-                  ? integerToCurrency(template.amount)
-                  : '-'
-              }
-              width={100}
-            />
-            <Cell width={120}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Button
-                  variant="bare"
-                  onPress={e => {
-                    e.stopPropagation();
-                    onEdit(template.id);
-                  }}
-                >
-                  <Trans>Edit</Trans>
-                </Button>
-                <Button
-                  variant="bare"
-                  style={{ color: theme.errorText }}
-                  onPress={e => {
-                    e.stopPropagation();
-                    onDelete(template.id);
-                  }}
-                >
-                  <Trans>Delete</Trans>
-                </Button>
-              </View>
-            </Cell>
-          </Row>
-        ))}
-      </Table>
+            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>
+              {t('Name')}
+            </th>
+            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>
+              {t('Payee')}
+            </th>
+            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>
+              {t('Category')}
+            </th>
+            <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, width: 100 }}>
+              {t('Amount')}
+            </th>
+            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, width: 120 }}>
+              {t('Actions')}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {templates.map(template => (
+            <tr
+              key={template.id}
+              style={{
+                borderBottom: `1px solid ${theme.tableBorder}`,
+                cursor: 'pointer',
+              }}
+              onClick={() => onEdit(template.id)}
+            >
+              <td style={{ padding: '10px 12px' }}>{template.name}</td>
+              <td style={{ padding: '10px 12px' }}>{getPayeeName(template.payee)}</td>
+              <td style={{ padding: '10px 12px' }}>{getCategoryName(template.category)}</td>
+              <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                {template.amount != null ? integerToCurrency(template.amount) : '-'}
+              </td>
+              <td
+                style={{ padding: '10px 12px' }}
+                onClick={e => e.stopPropagation()}
+              >
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Button variant="bare" onPress={() => onEdit(template.id)}>
+                    <Trans>Edit</Trans>
+                  </Button>
+                  <Button
+                    variant="bare"
+                    style={{ color: theme.errorText }}
+                    onPress={() => onDelete(template.id)}
+                  >
+                    <Trans>Delete</Trans>
+                  </Button>
+                </View>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </View>
   );
 });

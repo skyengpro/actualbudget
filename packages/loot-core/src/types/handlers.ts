@@ -16,6 +16,7 @@ import type { SpreadsheetHandlers } from '../server/spreadsheet/app';
 import type { SyncHandlers } from '../server/sync/app';
 import type { TagsHandlers } from '../server/tags/app';
 import type { TemplatesHandlers } from '../server/templates/app';
+import type { ReimbursementsHandlers } from '../server/reimbursements/app';
 import type { ToolsHandlers } from '../server/tools/app';
 import type { TransactionHandlers } from '../server/transactions/app';
 
@@ -43,6 +44,7 @@ export type Handlers = {} & ServerHandlers &
   EncryptionHandlers &
   TagsHandlers &
   TemplatesHandlers &
+  ReimbursementsHandlers &
   AuthHandlers;
 
 export type HandlerFunctions = Handlers[keyof Handlers];

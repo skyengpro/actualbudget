@@ -273,6 +273,10 @@ export function FinancesApp() {
                   element={<NarrowAlternate name="Templates" />}
                 />
                 <Route
+                  path="/reimbursements"
+                  element={<NarrowAlternate name="Reimbursements" />}
+                />
+                <Route
                   path="/schedules/:id"
                   element={
                     <WideNotSupported>

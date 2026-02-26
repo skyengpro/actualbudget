@@ -65,6 +65,8 @@ import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenu
 import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
 import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TemplateEditModal } from './modals/TemplateEditModal';
+import { ReimbursementEditModal } from './modals/ReimbursementEditModal';
+import { ReimbursementPayModal } from './modals/ReimbursementPayModal';
 import { TrackingBalanceMenuModal } from './modals/TrackingBalanceMenuModal';
 import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
 import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
@@ -410,6 +412,12 @@ export function Modals() {
 
         case 'template-edit':
           return <TemplateEditModal key={key} {...modal.options} />;
+
+        case 'reimbursement-edit':
+          return <ReimbursementEditModal key={key} {...modal.options} />;
+
+        case 'reimbursement-pay':
+          return <ReimbursementPayModal key={key} {...modal.options} />;
 
         default:
           throw new Error('Unknown modal');

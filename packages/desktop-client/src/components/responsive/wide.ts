@@ -4,6 +4,7 @@ export { Schedules } from '../schedules';
 export { Schedules as ScheduleEdit } from '../schedules';
 
 export { Templates } from '../templates';
+export { Reimbursements } from '../reimbursements';
 
 export { GoCardlessLink } from '../gocardless/GoCardlessLink';
 

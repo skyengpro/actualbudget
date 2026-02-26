@@ -11,6 +11,7 @@ import { Input } from '@actual-app/components/input';
 import { View } from '@actual-app/components/view';
 
 import { send } from 'loot-core/platform/client/connection';
+import { q } from 'loot-core/shared/query';
 import { amountToInteger, integerToCurrency } from 'loot-core/shared/util';
 import type { TransactionTemplateEntity } from 'loot-core/types/models';
 
@@ -50,24 +51,24 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
   useEffect(() => {
     if (id) {
       setIsLoading(true);
-      send('query', {
-        table: 'transaction_templates',
-        filter: { id },
-        select: ['*'],
-      }).then(({ data }) => {
-        if (data && data.length > 0) {
-          const template = data[0] as TransactionTemplateEntity;
-          setName(template.name);
-          setAccountId(template.account || null);
-          setPayeeId(template.payee || null);
-          setCategoryId(template.category || null);
-          setAmount(
-            template.amount != null ? integerToCurrency(template.amount) : '',
-          );
-          setNotes(template.notes || '');
-        }
-        setIsLoading(false);
-      });
+      send('query', q('transaction_templates').filter({ id }).select('*').serialize())
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            const template = data[0] as TransactionTemplateEntity;
+            setName(template.name);
+            setAccountId(template.account || null);
+            setPayeeId(template.payee || null);
+            setCategoryId(template.category || null);
+            setAmount(
+              template.amount != null ? integerToCurrency(template.amount) : '',
+            );
+            setNotes(template.notes || '');
+          }
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
     }
   }, [id]);
 
