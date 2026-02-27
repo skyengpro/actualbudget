@@ -8,6 +8,7 @@ import { FormError } from '@actual-app/components/form-error';
 import { InitialFocus } from '@actual-app/components/initial-focus';
 import { InlineField } from '@actual-app/components/inline-field';
 import { Input } from '@actual-app/components/input';
+import { Select } from '@actual-app/components/select';
 import { View } from '@actual-app/components/view';
 
 import { send } from 'loot-core/platform/client/connection';
@@ -23,7 +24,6 @@ import {
   ModalHeader,
   ModalTitle,
 } from '@desktop-client/components/common/Modal';
-import { AccountAutocomplete } from '@desktop-client/components/autocomplete/AccountAutocomplete';
 import { CategoryAutocomplete } from '@desktop-client/components/autocomplete/CategoryAutocomplete';
 import { PayeeAutocomplete } from '@desktop-client/components/autocomplete/PayeeAutocomplete';
 import { closeModal } from '@desktop-client/modals/modalsSlice';
@@ -42,10 +42,10 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
   const adding = id == null;
 
   const [name, setName] = useState('');
-  const [accountId, setAccountId] = useState<string | null>(null);
   const [payeeId, setPayeeId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
+  const [transactionType, setTransactionType] = useState<'payment' | 'deposit'>('payment');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!adding);
@@ -58,12 +58,15 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
           if (data && data.length > 0) {
             const template = data[0] as TransactionTemplateEntity;
             setName(template.name);
-            setAccountId(template.account || null);
             setPayeeId(template.payee || null);
             setCategoryId(template.category || null);
-            setAmount(
-              template.amount != null ? format.forEdit(template.amount) : '',
-            );
+            // Determine type based on amount sign
+            if (template.amount != null) {
+              setTransactionType(template.amount < 0 ? 'payment' : 'deposit');
+              setAmount(format.forEdit(Math.abs(template.amount)));
+            } else {
+              setAmount('');
+            }
             setNotes(template.notes || '');
           }
           setIsLoading(false);
@@ -83,13 +86,17 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
       return;
     }
 
-    const amountValue = amount.trim()
+    let amountValue = amount.trim()
       ? format.fromEdit(amount, null)
       : null;
 
+    // Apply sign based on transaction type
+    if (amountValue != null) {
+      amountValue = transactionType === 'payment' ? -Math.abs(amountValue) : Math.abs(amountValue);
+    }
+
     const template = {
       name: name.trim(),
-      account: accountId,
       payee: payeeId,
       category: categoryId,
       amount: amountValue,
@@ -147,13 +154,6 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
                 </InitialFocus>
               </InlineField>
 
-              <InlineField label={t('Account')} width="100%">
-                <AccountAutocomplete
-                  value={accountId}
-                  onSelect={setAccountId}
-                />
-              </InlineField>
-
               <InlineField label={t('Payee')} width="100%">
                 <PayeeAutocomplete
                   value={payeeId}
@@ -165,6 +165,18 @@ export function TemplateEditModal({ id }: TemplateEditModalProps) {
                 <CategoryAutocomplete
                   value={categoryId}
                   onSelect={setCategoryId}
+                />
+              </InlineField>
+
+              <InlineField label={t('Type')} width="100%">
+                <Select
+                  value={transactionType}
+                  onChange={(value: string) => setTransactionType(value as 'payment' | 'deposit')}
+                  options={[
+                    ['payment', t('Payment (Expense)')],
+                    ['deposit', t('Deposit (Income)')],
+                  ]}
+                  style={{ flex: 1 }}
                 />
               </InlineField>
 

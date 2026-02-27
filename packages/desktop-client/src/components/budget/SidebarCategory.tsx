@@ -16,11 +16,14 @@ import type {
   CategoryGroupEntity,
 } from 'loot-core/types/models';
 
+import { GoalIndicator } from './GoalIndicator';
 import { SidebarCategoryButtons } from './SidebarCategoryButtons';
 
 import { InputCell } from '@desktop-client/components/table';
 import { useContextMenu } from '@desktop-client/hooks/useContextMenu';
 import { useGlobalPref } from '@desktop-client/hooks/useGlobalPref';
+import { pushModal } from '@desktop-client/modals/modalsSlice';
+import { useDispatch } from '@desktop-client/redux';
 
 type SidebarCategoryProps = {
   innerRef: Ref<HTMLDivElement>;
@@ -62,6 +65,7 @@ export function SidebarCategory({
   onHideNewCategory,
 }: SidebarCategoryProps) {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [categoryExpandedStatePref] = useGlobalPref('categoryExpandedState');
   const categoryExpandedState = categoryExpandedStatePref ?? 0;
 
@@ -85,6 +89,7 @@ export function SidebarCategory({
       onContextMenu={handleContextMenu}
     >
       <TextOneLine data-testid="category-name">{category.name}</TextOneLine>
+      {!temporary && <GoalIndicator categoryId={category.id} />}
       <View style={{ flexShrink: 0, marginLeft: 5 }}>
         <Button
           variant="bare"
@@ -119,6 +124,18 @@ export function SidebarCategory({
                 onDelete(category.id);
               } else if (type === 'toggle-visibility') {
                 onSave({ ...category, hidden: !category.hidden });
+              } else if (type === 'set-goal') {
+                dispatch(
+                  pushModal({
+                    modal: {
+                      name: 'budget-goal-edit',
+                      options: {
+                        categoryId: category.id,
+                        categoryName: category.name,
+                      },
+                    },
+                  }),
+                );
               }
               setMenuOpen(false);
             }}
@@ -128,6 +145,7 @@ export function SidebarCategory({
                 name: 'toggle-visibility',
                 text: category.hidden ? t('Show') : t('Hide'),
               },
+              { name: 'set-goal', text: t('Set goal') },
               { name: 'delete', text: t('Delete') },
             ]}
           />

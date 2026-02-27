@@ -41,6 +41,9 @@ import { app as tagsApp } from './tags/app';
 import { app as templatesApp } from './templates/app';
 import { app as reimbursementsApp } from './reimbursements/app';
 import { app as forecastApp } from './forecast/app';
+import { app as budgetTemplatesApp } from './budget-templates/app';
+import { app as budgetGoalsApp } from './budget-goals/app';
+import { app as budgetScenariosApp } from './budget-scenarios/app';
 import { app as toolsApp } from './tools/app';
 import { app as transactionsApp } from './transactions/app';
 import * as rules from './transactions/transaction-rules';
@@ -156,6 +159,9 @@ app.combine(
   templatesApp,
   reimbursementsApp,
   forecastApp,
+  budgetTemplatesApp,
+  budgetGoalsApp,
+  budgetScenariosApp,
 );
 
 export function getDefaultDocumentDir() {

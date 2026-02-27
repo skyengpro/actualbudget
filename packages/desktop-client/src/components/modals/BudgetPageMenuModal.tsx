@@ -23,6 +23,8 @@ export function BudgetPageMenuModal({
   onAddCategoryGroup,
   onToggleHiddenCategories,
   onSwitchBudgetFile,
+  onOpenBudgetTemplates,
+  onOpenBudgetScenarios,
 }: BudgetPageMenuModalProps) {
   const defaultMenuItemStyle: CSSProperties = {
     ...styles.mobileMenuItem,
@@ -44,6 +46,8 @@ export function BudgetPageMenuModal({
             onAddCategoryGroup={onAddCategoryGroup}
             onToggleHiddenCategories={onToggleHiddenCategories}
             onSwitchBudgetFile={onSwitchBudgetFile}
+            onOpenBudgetTemplates={onOpenBudgetTemplates}
+            onOpenBudgetScenarios={onOpenBudgetScenarios}
           />
         </>
       )}
@@ -58,12 +62,16 @@ type BudgetPageMenuProps = Omit<
   onAddCategoryGroup: () => void;
   onToggleHiddenCategories: () => void;
   onSwitchBudgetFile: () => void;
+  onOpenBudgetTemplates?: () => void;
+  onOpenBudgetScenarios?: () => void;
 };
 
 function BudgetPageMenu({
   onAddCategoryGroup,
   onToggleHiddenCategories,
   onSwitchBudgetFile,
+  onOpenBudgetTemplates,
+  onOpenBudgetScenarios,
   ...props
 }: BudgetPageMenuProps) {
   const [showHiddenCategories] = useLocalPref('budget.showHiddenCategories');
@@ -81,6 +89,12 @@ function BudgetPageMenu({
         break;
       case 'switch-budget-file':
         onSwitchBudgetFile?.();
+        break;
+      case 'budget-templates':
+        onOpenBudgetTemplates?.();
+        break;
+      case 'budget-scenarios':
+        onOpenBudgetScenarios?.();
         break;
       default:
         throw new Error(`Unrecognized menu item: ${name}`);
@@ -101,6 +115,22 @@ function BudgetPageMenu({
           name: 'toggle-hidden-categories',
           text: `${!showHiddenCategories ? t('Show hidden categories') : t('Hide hidden categories')}`,
         },
+        ...(onOpenBudgetTemplates
+          ? [
+              {
+                name: 'budget-templates',
+                text: t('Budget templates'),
+              },
+            ]
+          : []),
+        ...(onOpenBudgetScenarios
+          ? [
+              {
+                name: 'budget-scenarios',
+                text: t('Budget scenarios'),
+              },
+            ]
+          : []),
         {
           name: 'switch-budget-file',
           text: t('Switch budget file'),

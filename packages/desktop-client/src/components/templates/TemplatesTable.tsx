@@ -15,12 +15,14 @@ type TemplatesTableProps = {
   templates: readonly TransactionTemplateEntity[];
   onEdit: (id: TransactionTemplateEntity['id']) => void;
   onDelete: (id: TransactionTemplateEntity['id']) => void;
+  onApply?: (id: TransactionTemplateEntity['id']) => void;
 };
 
 export const TemplatesTable = memo(function TemplatesTable({
   templates,
   onEdit,
   onDelete,
+  onApply,
 }: TemplatesTableProps) {
   const { t } = useTranslation();
   const format = useFormat();
@@ -76,7 +78,7 @@ export const TemplatesTable = memo(function TemplatesTable({
             <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, width: 100 }}>
               {t('Amount')}
             </th>
-            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, width: 120 }}>
+            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, width: 180 }}>
               {t('Actions')}
             </th>
           </tr>
@@ -102,6 +104,11 @@ export const TemplatesTable = memo(function TemplatesTable({
                 onClick={e => e.stopPropagation()}
               >
                 <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {onApply && (
+                    <Button variant="primary" onPress={() => onApply(template.id)}>
+                      <Trans>Apply</Trans>
+                    </Button>
+                  )}
                   <Button variant="bare" onPress={() => onEdit(template.id)}>
                     <Trans>Edit</Trans>
                   </Button>

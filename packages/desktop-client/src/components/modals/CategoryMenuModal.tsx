@@ -8,6 +8,7 @@ import {
   SvgDotsHorizontalTriple,
   SvgTrash,
 } from '@actual-app/components/icons/v1';
+import { SvgFlag } from '@actual-app/components/icons/v1';
 import {
   SvgNotesPaper,
   SvgViewHide,
@@ -29,7 +30,9 @@ import { Notes } from '@desktop-client/components/Notes';
 import { useCategory } from '@desktop-client/hooks/useCategory';
 import { useCategoryGroup } from '@desktop-client/hooks/useCategoryGroup';
 import { useNotes } from '@desktop-client/hooks/useNotes';
+import { pushModal } from '@desktop-client/modals/modalsSlice';
 import type { Modal as ModalType } from '@desktop-client/modals/modalsSlice';
+import { useDispatch } from '@desktop-client/redux';
 
 type CategoryMenuModalProps = Extract<
   ModalType,
@@ -45,6 +48,7 @@ export function CategoryMenuModal({
   onClose,
 }: CategoryMenuModalProps) {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const { data: category } = useCategory(categoryId);
   const { data: categoryGroup } = useCategoryGroup(category?.group);
   const originalNotes = useNotes(category.id);
@@ -68,6 +72,20 @@ export function CategoryMenuModal({
 
   const _onDelete = () => {
     onDelete?.(category.id);
+  };
+
+  const _onSetGoal = () => {
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'budget-goal-edit',
+          options: {
+            categoryId: category.id,
+            categoryName: category.name,
+          },
+        },
+      }),
+    );
   };
 
   const buttonStyle: CSSProperties = {
@@ -141,15 +159,24 @@ export function CategoryMenuModal({
                 justifyContent: 'space-between',
                 alignContent: 'space-between',
                 paddingTop: 10,
+                gap: 8,
               }}
             >
-              <Button style={buttonStyle} onPress={_onEditNotes}>
+              <Button style={{ ...buttonStyle, flexBasis: '48%' }} onPress={_onEditNotes}>
                 <SvgNotesPaper
                   width={20}
                   height={20}
                   style={{ paddingRight: 5 }}
                 />
                 <Trans>Edit notes</Trans>
+              </Button>
+              <Button style={{ ...buttonStyle, flexBasis: '48%' }} onPress={_onSetGoal}>
+                <SvgFlag
+                  width={20}
+                  height={20}
+                  style={{ paddingRight: 5 }}
+                />
+                <Trans>Set goal</Trans>
               </Button>
             </View>
           </View>

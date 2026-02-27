@@ -18,6 +18,9 @@ import type { TagsHandlers } from '../server/tags/app';
 import type { TemplatesHandlers } from '../server/templates/app';
 import type { ReimbursementsHandlers } from '../server/reimbursements/app';
 import type { ForecastHandlers } from '../server/forecast/app';
+import type { BudgetTemplatesHandlers } from '../server/budget-templates/app';
+import type { BudgetGoalsHandlers } from '../server/budget-goals/app';
+import type { BudgetScenariosHandlers } from '../server/budget-scenarios/app';
 import type { ToolsHandlers } from '../server/tools/app';
 import type { TransactionHandlers } from '../server/transactions/app';
 
@@ -47,6 +50,9 @@ export type Handlers = {} & ServerHandlers &
   TemplatesHandlers &
   ReimbursementsHandlers &
   ForecastHandlers &
+  BudgetTemplatesHandlers &
+  BudgetGoalsHandlers &
+  BudgetScenariosHandlers &
   AuthHandlers;
 
 export type HandlerFunctions = Handlers[keyof Handlers];

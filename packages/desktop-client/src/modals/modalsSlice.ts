@@ -486,6 +486,8 @@ export type Modal =
         onAddCategoryGroup: () => void;
         onToggleHiddenCategories: () => void;
         onSwitchBudgetFile: () => void;
+        onOpenBudgetTemplates?: () => void;
+        onOpenBudgetScenarios?: () => void;
       };
     }
   | {
@@ -605,6 +607,10 @@ export type Modal =
       options: { id?: string };
     }
   | {
+      name: 'template-apply';
+      options: { templateId: string };
+    }
+  | {
       name: 'reimbursement-edit';
       options: { id?: string; onSave?: () => void };
     }
@@ -622,6 +628,26 @@ export type Modal =
       options: {
         fileId: string;
         fileName: string;
+      };
+    }
+  | {
+      name: 'budget-templates';
+      options: {
+        month?: string;
+      };
+    }
+  | {
+      name: 'budget-goal-edit';
+      options: {
+        categoryId: string;
+        categoryName: string;
+        onSave?: () => void;
+      };
+    }
+  | {
+      name: 'budget-scenarios';
+      options: {
+        month?: string;
       };
     };
 

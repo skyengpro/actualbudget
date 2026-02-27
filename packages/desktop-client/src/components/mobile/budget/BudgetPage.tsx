@@ -500,6 +500,34 @@ export function BudgetPage() {
     [budgetType, dispatch, onBudgetAction, onOpenBudgetMonthNotesModal],
   );
 
+  const onOpenBudgetTemplates = useCallback(() => {
+    dispatch(collapseModals({ rootModalName: 'budget-page-menu' }));
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'budget-templates',
+          options: {
+            month: startMonth,
+          },
+        },
+      }),
+    );
+  }, [dispatch, startMonth]);
+
+  const onOpenBudgetScenarios = useCallback(() => {
+    dispatch(collapseModals({ rootModalName: 'budget-page-menu' }));
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'budget-scenarios',
+          options: {
+            month: startMonth,
+          },
+        },
+      }),
+    );
+  }, [dispatch, startMonth]);
+
   const onOpenBudgetPageMenu = useCallback(() => {
     dispatch(
       pushModal({
@@ -509,6 +537,8 @@ export function BudgetPage() {
             onAddCategoryGroup: onOpenNewCategoryGroupModal,
             onToggleHiddenCategories,
             onSwitchBudgetFile,
+            onOpenBudgetTemplates,
+            onOpenBudgetScenarios,
           },
         },
       }),
@@ -518,6 +548,8 @@ export function BudgetPage() {
     onOpenNewCategoryGroupModal,
     onSwitchBudgetFile,
     onToggleHiddenCategories,
+    onOpenBudgetTemplates,
+    onOpenBudgetScenarios,
   ]);
 
   if (!categoryGroups || !initialized) {

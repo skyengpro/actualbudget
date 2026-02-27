@@ -44,6 +44,15 @@ export function Templates() {
     [],
   );
 
+  const onApply = useCallback(
+    (id: TransactionTemplateEntity['id']) => {
+      dispatch(
+        pushModal({ modal: { name: 'template-apply', options: { templateId: id } } }),
+      );
+    },
+    [dispatch],
+  );
+
   const templatesQuery = useMemo(
     () =>
       q('transaction_templates')
@@ -118,6 +127,7 @@ export function Templates() {
           templates={filteredTemplates}
           onEdit={onEdit}
           onDelete={onDelete}
+          onApply={canWrite ? onApply : undefined}
         />
       )}
     </Page>

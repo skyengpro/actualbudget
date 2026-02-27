@@ -65,6 +65,10 @@ import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenu
 import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
 import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TemplateEditModal } from './modals/TemplateEditModal';
+import { TemplateApplyModal } from './modals/TemplateApplyModal';
+import { BudgetTemplatesModal } from './modals/BudgetTemplatesModal';
+import { BudgetGoalEditModal } from './modals/BudgetGoalEditModal';
+import { BudgetScenariosModal } from './modals/BudgetScenariosModal';
 import { ReimbursementEditModal } from './modals/ReimbursementEditModal';
 import { ReimbursementPayModal } from './modals/ReimbursementPayModal';
 import { ShareFileModal } from './modals/ShareFileModal';
@@ -414,6 +418,9 @@ export function Modals() {
         case 'template-edit':
           return <TemplateEditModal key={key} {...modal.options} />;
 
+        case 'template-apply':
+          return <TemplateApplyModal key={key} {...modal.options} />;
+
         case 'reimbursement-edit':
           return <ReimbursementEditModal key={key} {...modal.options} />;
 
@@ -422,6 +429,15 @@ export function Modals() {
 
         case 'share-file':
           return <ShareFileModal key={key} {...modal.options} />;
+
+        case 'budget-templates':
+          return <BudgetTemplatesModal key={key} {...modal.options} />;
+
+        case 'budget-goal-edit':
+          return <BudgetGoalEditModal key={key} {...modal.options} />;
+
+        case 'budget-scenarios':
+          return <BudgetScenariosModal key={key} {...modal.options} />;
 
         default:
           throw new Error('Unknown modal');
