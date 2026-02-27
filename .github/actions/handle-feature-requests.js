@@ -36,7 +36,7 @@ async function main() {
     const res = await makeAPIRequest(
       /* GraphQL */ `
         query FetchLinkedIssues($pr: Int!) {
-          repository(owner: "actualbudget", name: "actual") {
+          repository(owner: "skyengpro", name: "actualbudget") {
             pullRequest(number: $pr) {
               closingIssuesReferences(first: 10) {
                 nodes {
@@ -105,7 +105,7 @@ async function main() {
       const commentRes = await makeAPIRequest(
         /* GraphQL */ `
           query FetchComments($issue: Int!) {
-            repository(owner: "actualbudget", name: "actual") {
+            repository(owner: "skyengpro", name: "actualbudget") {
               issue(number: $issue) {
                 comments(first: 100) {
                   nodes {

@@ -2,7 +2,7 @@ name: Fork PR Welcome
 
 ##########################################################################################
 # WARNING! This workflow uses the 'pull_request_target' event. That means that it will    #
-# always run in the context of the main actualbudget/actual repo, even if the PR is from  #
+# always run in the context of the main skyengpro/actualbudget repo, even if the PR is from  #
 # a fork. This is necessary to get access to a GitHub token that can post a comment on   #
 # the PR. Be VERY CAREFUL about adding things to this workflow, since forks can inject   #
 # arbitrary code into their branch, and can pollute the artifacts we download. Arbitrary #
@@ -45,4 +45,4 @@ jobs:
 
             We do this to reduce the TOIL the core contributor team has to go through for each PR and to allow for speedy reviews and merges.
 
-            For more information, please see our [Contributing Guide](https://actualbudget.org/docs/contributing/).
+            For more information, please see our [Contributing Guide](https://skybudget.app/docs/contributing/).

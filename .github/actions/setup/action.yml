@@ -50,7 +50,7 @@ runs:
     - name: Download translations
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
-        repository: actualbudget/translations
+        repository: skyengpro/actualbudget-translations
         path: ${{ inputs.working-directory }}/packages/desktop-client/locale
       if: ${{ inputs.download-translations == 'true' }}
     - name: Remove untranslated languages

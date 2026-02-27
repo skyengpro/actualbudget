@@ -1,5 +1,5 @@
 {
-  "name": "@actual-app/web",
+  "name": "@sky-budget/web",
   "version": "26.2.1",
   "license": "MIT",
   "files": [
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit && tsc-strict"
   },
   "devDependencies": {
-    "@actual-app/components": "workspace:*",
+    "@sky-budget/components": "workspace:*",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/lang-javascript": "^6.2.4",
     "@codemirror/language": "^6.12.1",

@@ -54,7 +54,7 @@ jobs:
           sudo flatpak install org.electronjs.Electron2.BaseApp//24.08 -y
           sudo flatpak install org.flatpak.Builder -y
 
-          METAINFO_FILE="packages/desktop-electron/extra-resources/linux/com.actualbudget.actual.metainfo.xml"
+          METAINFO_FILE="packages/desktop-electron/extra-resources/linux/com.skybudget.app.metainfo.xml"
           TODAY=$(date +%Y-%m-%d)
           VERSION=${{ steps.process_version.outputs.version }}
           sed -i "s/%RELEASE_VERSION%/$VERSION/g; s/%RELEASE_DATE%/$TODAY/g" "$METAINFO_FILE"
@@ -95,7 +95,7 @@ jobs:
         with:
           draft: true
           body: |
-            :link: [View release notes](https://actualbudget.org/blog/release-${{ steps.process_version.outputs.version }})
+            :link: [View release notes](https://skybudget.app/blog/release-${{ steps.process_version.outputs.version }})
 
             ## Desktop releases
             Please note: Microsoft store updates can sometimes lag behind the main release by a couple of days while they verify the new version.
@@ -103,7 +103,7 @@ jobs:
             <p>
               <a href="https://apps.microsoft.com/detail/9p2hmlhsdbrm?cid=Github+Releases&mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" /></a>
               <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="12" height="1" alt="" />
-              <a href="https://flathub.org/apps/com.actualbudget.actual"><img width="165" style="margin-left:12px;" alt="Get it on Flathub" src="https://flathub.org/api/badge?locale=en" /></a>
+              <a href="https://flathub.org/apps/com.skybudget.app"><img width="165" style="margin-left:12px;" alt="Get it on Flathub" src="https://flathub.org/api/badge?locale=en" /></a>
             </p>
           files: |
             packages/desktop-electron/dist/*.dmg
@@ -178,20 +178,20 @@ jobs:
       - name: Checkout Flathub repo
         uses: actions/checkout@v6
         with:
-          repository: flathub/com.actualbudget.actual
+          repository: flathub/com.skybudget.app
           token: ${{ secrets.FLATHUB_GITHUB_TOKEN }}
 
       - name: Update manifest with new SHA256
         run: |
           # Replace x86_64 entry
-          sed -i "/x86_64.AppImage/{n;s|sha256:.*|sha256: ${{ env.APPIMAGE_X64_SHA256 }}|}" com.actualbudget.actual.yml
-          sed -i "/x86_64.AppImage/s|url:.*|url: https://github.com/actualbudget/actual/releases/download/v${{ needs.build.outputs.version }}/Actual-linux-x86_64.AppImage|" com.actualbudget.actual.yml
+          sed -i "/x86_64.AppImage/{n;s|sha256:.*|sha256: ${{ env.APPIMAGE_X64_SHA256 }}|}" com.skybudget.app.yml
+          sed -i "/x86_64.AppImage/s|url:.*|url: https://github.com/skyengpro/actualbudget/releases/download/v${{ needs.build.outputs.version }}/Actual-linux-x86_64.AppImage|" com.skybudget.app.yml
 
           # Replace arm64 entry
-          sed -i "/arm64.AppImage/{n;s|sha256:.*|sha256: ${{ env.APPIMAGE_ARM64_SHA256 }}|}" com.actualbudget.actual.yml
-          sed -i "/arm64.AppImage/s|url:.*|url: https://github.com/actualbudget/actual/releases/download/v${{ needs.build.outputs.version }}/Actual-linux-arm64.AppImage|" com.actualbudget.actual.yml
+          sed -i "/arm64.AppImage/{n;s|sha256:.*|sha256: ${{ env.APPIMAGE_ARM64_SHA256 }}|}" com.skybudget.app.yml
+          sed -i "/arm64.AppImage/s|url:.*|url: https://github.com/skyengpro/actualbudget/releases/download/v${{ needs.build.outputs.version }}/Actual-linux-arm64.AppImage|" com.skybudget.app.yml
 
-          cat com.actualbudget.actual.yml
+          cat com.skybudget.app.yml
 
       - name: Create PR in Flathub repo
         uses: peter-evans/create-pull-request@v7
@@ -204,5 +204,5 @@ jobs:
           body: |
             This PR updates the Actual desktop flatpak to version ${{ needs.build.outputs.version }}.
 
-            :link: [View release notes](https://actualbudget.org/blog/release-${{ needs.build.outputs.version }})
+            :link: [View release notes](https://skybudget.app/blog/release-${{ needs.build.outputs.version }})
           reviewers: 'jfdoming,MatissJanis,youngcw' # The core team that have accepted the collaborator access to the Flathub repo

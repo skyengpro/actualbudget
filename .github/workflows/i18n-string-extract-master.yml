@@ -9,7 +9,7 @@ on:
 jobs:
   extract-and-upload-i18n-strings:
     runs-on: ubuntu-latest
-    if: github.repository == 'actualbudget/actual'
+    if: github.repository == 'skyengpro/actualbudget'
     steps:
       - name: Check out main repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -34,7 +34,7 @@ jobs:
             --url https://hosted.weblate.org/api/ \
             --key "${{ secrets.WEBLATE_API_KEY_CI_STRINGS }}" \
             lock \
-            actualbudget/actual
+            skyengpro/actualbudget
 
       - name: Update VCS with latest translations
         run: |
@@ -42,12 +42,12 @@ jobs:
             --url https://hosted.weblate.org/api/ \
             --key "${{ secrets.WEBLATE_API_KEY_CI_STRINGS }}" \
             push \
-            actualbudget/actual
+            skyengpro/actualbudget
       - name: Check out updated translations
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           ssh-key: ${{ secrets.STRING_IMPORT_DEPLOY_KEY }}
-          repository: actualbudget/translations
+          repository: skyengpro/actualbudget-translations
           path: translations
       - name: Generate i18n strings
         working-directory: actual
@@ -75,7 +75,7 @@ jobs:
             --url https://hosted.weblate.org/api/ \
             --key "${{ secrets.WEBLATE_API_KEY_CI_STRINGS }}" \
             pull \
-            actualbudget/actual
+            skyengpro/actualbudget
 
       - name: Unlock translations
         if: always() # Clean up even on failure
@@ -84,4 +84,4 @@ jobs:
             --url https://hosted.weblate.org/api/ \
             --key "${{ secrets.WEBLATE_API_KEY_CI_STRINGS }}" \
             unlock \
-            actualbudget/actual
+            skyengpro/actualbudget

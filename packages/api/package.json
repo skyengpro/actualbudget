@@ -1,5 +1,5 @@
 {
-  "name": "@actual-app/api",
+  "name": "@sky-budget/api",
   "version": "26.2.1",
   "description": "An API for Actual",
   "license": "MIT",
@@ -11,7 +11,7 @@
   "types": "@types/index.d.ts",
   "scripts": {
     "build:app": "yarn workspace loot-core build:api",
-    "build:crdt": "yarn workspace @actual-app/crdt build",
+    "build:crdt": "yarn workspace @sky-budget/crdt build",
     "build:node": "tsc && tsc-alias",
     "build:migrations": "mkdir dist/migrations && cp migrations/*.sql dist/migrations",
     "build:default-db": "cp default-db.sqlite dist/",
@@ -21,7 +21,7 @@
     "typecheck": "yarn build && tsc --noEmit && tsc-strict"
   },
   "dependencies": {
-    "@actual-app/crdt": "workspace:^",
+    "@sky-budget/crdt": "workspace:^",
     "better-sqlite3": "^12.6.2",
     "compare-versions": "^6.1.1",
     "node-fetch": "^3.3.2",

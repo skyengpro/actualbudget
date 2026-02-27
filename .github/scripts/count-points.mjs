@@ -188,8 +188,8 @@ async function countContributorPoints() {
   const octokit = new Octokit({
     auth: process.env.GITHUB_TOKEN,
   });
-  const owner = 'actualbudget';
-  const repo = 'actual';
+  const owner = 'skyengpro';
+  const repo = 'actualbudget';
 
   const { since, until } = getLastMonthDates();
 
