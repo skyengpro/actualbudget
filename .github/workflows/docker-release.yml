@@ -64,7 +64,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       # Building outside of the docker image allows us to build once and push to multiple platforms
       # This is faster and avoids yarn memory issues
