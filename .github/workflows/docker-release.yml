@@ -9,6 +9,10 @@ on:
       - README.md
       - LICENSE.txt
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   IMAGES: |
     ghcr.io/skyengpro/actualbudget
