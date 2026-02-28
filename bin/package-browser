@@ -4,15 +4,21 @@ ROOT=`dirname $0`
 
 cd "$ROOT/.."
 
-echo "Updating translations..."
-if ! [ -d packages/desktop-client/locale ]; then
+# Skip translation update if locale is already in repo (no .git directory)
+if [ -d packages/desktop-client/locale/.git ]; then
+    echo "Updating translations..."
+    pushd packages/desktop-client/locale > /dev/null
+    git checkout .
+    git pull
+    popd > /dev/null
+    packages/desktop-client/bin/remove-untranslated-languages
+elif [ -d packages/desktop-client/locale ]; then
+    echo "Translations already bundled in repo, skipping update"
+else
+    echo "Cloning translations..."
     git clone https://github.com/actualbudget/translations packages/desktop-client/locale
+    packages/desktop-client/bin/remove-untranslated-languages
 fi
-pushd packages/desktop-client/locale > /dev/null
-git checkout .
-git pull
-popd > /dev/null
-packages/desktop-client/bin/remove-untranslated-languages
 
 export NODE_OPTIONS="--max-old-space-size=4096"
 
