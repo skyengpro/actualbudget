@@ -4,9 +4,10 @@ replicaCount: 1
 image:
   repository: ghcr.io/skyengpro/actualbudget
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: "1.0.2"
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 nameOverride: ""
 fullnameOverride: ""
 
@@ -84,7 +85,7 @@ env:
 # OpenID Configuration (Google)
 # Set these values to enable Google OpenID authentication
 openid:
-  enabled: false
+  enabled: true
   # For Google: https://accounts.google.com/.well-known/openid-configuration
   discoveryUrl: "https://accounts.google.com/.well-known/openid-configuration"
   # Set via --set openid.clientId=xxx or in a separate values-secrets.yaml
@@ -92,6 +93,6 @@ openid:
   clientSecret: ""
   serverHostname: "https://budget.skyengpro.com"
   # Set to true to enforce OpenID (disables password login)
-  enforce: false
+  enforce: true
   # User creation mode: 'manual' or 'login' (auto-create users on first login)
   userCreationMode: "manual"
