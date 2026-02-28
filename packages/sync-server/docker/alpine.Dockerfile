@@ -31,12 +31,17 @@ WORKDIR /app
 
 COPY packages/sync-server ./packages/sync-server
 
-# Remove symbolic links for @actual-app/web and @actual-app/sync-server
-RUN rm -rf ./node_modules/@actual-app/web ./node_modules/@actual-app/sync-server
+# Remove symbolic links for @actual-app packages
+RUN rm -rf ./node_modules/@actual-app/web ./node_modules/@actual-app/sync-server ./node_modules/@actual-app/crdt
 
 # Copy in the @actual-app/web artifacts manually, so we don't need the entire packages folder
 COPY packages/desktop-client/package.json ./node_modules/@actual-app/web/package.json
 COPY packages/desktop-client/build ./node_modules/@actual-app/web/build
+
+# Copy @actual-app/crdt package (including proto files)
+COPY packages/crdt/package.json ./node_modules/@actual-app/crdt/package.json
+COPY packages/crdt/dist ./node_modules/@actual-app/crdt/dist
+COPY packages/crdt/src/proto/sync_pb.js ./node_modules/@actual-app/crdt/dist/src/proto/sync_pb.js
 
 FROM alpine:3.22 AS prod
 
