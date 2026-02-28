@@ -12,6 +12,8 @@ on:
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 env:
   IMAGES: |
@@ -81,6 +83,8 @@ jobs:
           file: packages/sync-server/docker/ubuntu.Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
+          provenance: false
+          sbom: false
 
       - name: Build and push alpine image
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
@@ -90,3 +94,5 @@ jobs:
           file: packages/sync-server/docker/alpine.Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
           tags: ${{ steps.alpine-meta.outputs.tags }}
+          provenance: false
+          sbom: false
