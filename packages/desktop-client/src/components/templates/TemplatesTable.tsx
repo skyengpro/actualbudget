@@ -16,6 +16,7 @@ type TemplatesTableProps = {
   onEdit: (id: TransactionTemplateEntity['id']) => void;
   onDelete: (id: TransactionTemplateEntity['id']) => void;
   onApply?: (id: TransactionTemplateEntity['id']) => void;
+  onSchedule?: (template: TransactionTemplateEntity) => void;
 };
 
 export const TemplatesTable = memo(function TemplatesTable({
@@ -23,6 +24,7 @@ export const TemplatesTable = memo(function TemplatesTable({
   onEdit,
   onDelete,
   onApply,
+  onSchedule,
 }: TemplatesTableProps) {
   const { t } = useTranslation();
   const format = useFormat();
@@ -107,6 +109,11 @@ export const TemplatesTable = memo(function TemplatesTable({
                   {onApply && (
                     <Button variant="primary" onPress={() => onApply(template.id)}>
                       <Trans>Apply</Trans>
+                    </Button>
+                  )}
+                  {onSchedule && (
+                    <Button variant="bare" onPress={() => onSchedule(template)}>
+                      <Trans>Schedule</Trans>
                     </Button>
                   )}
                   <Button variant="bare" onPress={() => onEdit(template.id)}>

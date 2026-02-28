@@ -53,6 +53,17 @@ export function Templates() {
     [dispatch],
   );
 
+  const onSchedule = useCallback(
+    (template: TransactionTemplateEntity) => {
+      dispatch(
+        pushModal({
+          modal: { name: 'schedule-edit', options: { template } },
+        }),
+      );
+    },
+    [dispatch],
+  );
+
   const templatesQuery = useMemo(
     () =>
       q('transaction_templates')
@@ -128,6 +139,7 @@ export function Templates() {
           onEdit={onEdit}
           onDelete={onDelete}
           onApply={canWrite ? onApply : undefined}
+          onSchedule={canWrite ? onSchedule : undefined}
         />
       )}
     </Page>

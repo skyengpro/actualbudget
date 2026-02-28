@@ -31,15 +31,20 @@ type ScheduleEditModalProps = Extract<
   { name: 'schedule-edit' }
 >['options'];
 
-export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
+export function ScheduleEditModal({
+  id,
+  transaction,
+  template,
+}: ScheduleEditModalProps) {
   const { t } = useTranslation();
 
   const adding = id == null;
   const fromTrans = transaction != null;
+  const fromTemplate = template != null;
   const { data: payees } = usePayeesById();
   const globalDispatch = useDispatch();
 
-  // Create initial schedule if adding from transaction
+  // Create initial schedule if adding from transaction or template
   const initialSchedule = useMemo(() => {
     if (!adding) {
       return undefined;
@@ -72,14 +77,26 @@ export function ScheduleEditModal({ id, transaction }: ScheduleEditModalProps) {
         } satisfies Partial<ScheduleEntity>)
       : {};
 
+    // Pre-fill from template if provided
+    const templateFields = fromTemplate
+      ? ({
+          _amount: template.amount ?? null,
+          _amountOp: 'is',
+          name: template.name,
+          _payee: template.payee ?? '',
+          _date: date,
+        } satisfies Partial<ScheduleEntity>)
+      : {};
+
     return {
       posts_transaction: false,
       _date: date,
       _conditions: [{ op: 'isapprox', field: 'date', value: date }],
       _actions: [],
       ...transFields,
+      ...templateFields,
     } satisfies Partial<ScheduleEntity>;
-  }, [adding, fromTrans, payees, transaction]);
+  }, [adding, fromTrans, fromTemplate, payees, transaction, template]);
 
   const { state, dispatch, loadSchedule } = useScheduleEdit({
     scheduleId: id,

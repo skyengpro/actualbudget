@@ -269,7 +269,11 @@ export type Modal =
     }
   | {
       name: 'schedule-edit';
-      options: { id?: string; transaction?: TransactionEntity } | null;
+      options: {
+        id?: string;
+        transaction?: TransactionEntity;
+        template?: TransactionTemplateEntity;
+      } | null;
     }
   | {
       name: 'schedule-link';
