@@ -24,8 +24,11 @@ export async function getLatestVersion(): Promise<string | 'unknown'> {
   }
 
   try {
+    // Use custom GitHub repo if configured, otherwise default to skyengpro fork
+    const githubRepo =
+      process.env.REACT_APP_GITHUB_REPO || 'skyengpro/actualbudget';
     const response = await fetch(
-      'https://api.github.com/repos/actualbudget/actual/releases/latest',
+      `https://api.github.com/repos/${githubRepo}/releases/latest`,
     );
     const json = await response.json();
     return json?.tag_name ?? 'unknown';
