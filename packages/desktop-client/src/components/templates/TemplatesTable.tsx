@@ -51,14 +51,14 @@ export const TemplatesTable = memo(function TemplatesTable({
         backgroundColor: theme.tableBackground,
         borderRadius: 4,
         border: `1px solid ${theme.tableBorder}`,
-        overflow: 'hidden',
+        overflowX: 'auto',
       }}
     >
       <table
         style={{
           width: '100%',
           borderCollapse: 'collapse',
-          tableLayout: 'fixed',
+          minWidth: 800,
         }}
       >
         <thead>
@@ -77,10 +77,10 @@ export const TemplatesTable = memo(function TemplatesTable({
             <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>
               {t('Category')}
             </th>
-            <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, width: 100 }}>
+            <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, width: 130 }}>
               {t('Amount')}
             </th>
-            <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, width: 180 }}>
+            <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600, width: 280 }}>
               {t('Actions')}
             </th>
           </tr>
@@ -102,10 +102,10 @@ export const TemplatesTable = memo(function TemplatesTable({
                 {template.amount != null ? format(template.amount, 'financial') : '-'}
               </td>
               <td
-                style={{ padding: '10px 12px' }}
+                style={{ padding: '10px 12px', textAlign: 'right' }}
                 onClick={e => e.stopPropagation()}
               >
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'flex-end' }}>
                   {onApply && (
                     <Button variant="primary" onPress={() => onApply(template.id)}>
                       <Trans>Apply</Trans>

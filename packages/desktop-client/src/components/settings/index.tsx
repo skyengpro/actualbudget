@@ -61,7 +61,7 @@ function About() {
     <Setting>
       <Text>
         <Trans>
-          <strong>Actual</strong> is a super fast privacy-focused app for
+          <strong>Sky Budget</strong> is a super fast privacy-focused app for
           managing your finances.
         </Trans>
       </Text>
@@ -93,7 +93,7 @@ function About() {
         {notifyWhenUpdateIsAvailable && versionInfo?.isOutdated ? (
           <Link
             variant="external"
-            to="https://actualbudget.org/docs/releases"
+            to="https://github.com/skyengpro/actualbudget/releases"
             linkColor="purple"
           >
             <Trans>New version available: {versionInfo.latestVersion}</Trans>
@@ -108,7 +108,7 @@ function About() {
         <Text>
           <Link
             variant="external"
-            to="https://actualbudget.org/docs/releases"
+            to="https://github.com/skyengpro/actualbudget/releases"
             linkColor="purple"
           >
             <Trans>Release Notes</Trans>
