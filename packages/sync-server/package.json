@@ -1,5 +1,5 @@
 {
-  "name": "@sky-budget/sync-server",
+  "name": "@actual-app/sync-server",
   "version": "26.2.1",
   "description": "actual syncing server",
   "license": "MIT",
@@ -29,8 +29,8 @@
     "health-check": "yarn build && node build/src/scripts/health-check.js"
   },
   "dependencies": {
-    "@sky-budget/crdt": "2.1.0",
-    "@sky-budget/web": "workspace:*",
+    "@actual-app/crdt": "workspace:^",
+    "@actual-app/web": "workspace:*",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.6.2",
     "convict": "^6.2.4",

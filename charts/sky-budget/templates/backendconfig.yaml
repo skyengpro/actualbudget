@@ -1,0 +1,18 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: {{ include "sky-budget.fullname" . }}
+  labels:
+    {{- include "sky-budget.labels" . | nindent 4 }}
+spec:
+  healthCheck:
+    checkIntervalSec: 30
+    timeoutSec: 10
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /health
+    port: 5006
+  timeoutSec: 30
+  connectionDraining:
+    drainingTimeoutSec: 60

@@ -1,0 +1,97 @@
+# Default values for sky-budget
+replicaCount: 1
+
+image:
+  repository: ghcr.io/skyengpro/actualbudget
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  fsGroup: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+
+service:
+  type: ClusterIP
+  port: 5006
+
+ingress:
+  enabled: true
+  className: ""  # Using annotation-based class for GKE
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "true"
+    kubernetes.io/ingress.global-static-ip-name: "sky-budget-ip"
+    networking.gke.io/managed-certificates: "sky-budget-certificate"
+  hosts:
+    - host: budget.skyengpro.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS handled by GKE ManagedCertificate
+  tls: []
+
+# GKE Managed Certificate
+managedCertificate:
+  enabled: true
+  name: sky-budget-certificate
+  domains:
+    - budget.skyengpro.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  annotations: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables
+env:
+  ACTUAL_PORT: "5006"
+  ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB: "20"
+  ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB: "50"
+  ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB: "20"
+
+# OpenID Configuration (Google)
+# Set these values to enable Google OpenID authentication
+openid:
+  enabled: false
+  # For Google: https://accounts.google.com/.well-known/openid-configuration
+  discoveryUrl: "https://accounts.google.com/.well-known/openid-configuration"
+  # Set via --set openid.clientId=xxx or in a separate values-secrets.yaml
+  clientId: ""
+  clientSecret: ""
+  serverHostname: "https://budget.skyengpro.com"
+  # Set to true to enforce OpenID (disables password login)
+  enforce: false
+  # User creation mode: 'manual' or 'login' (auto-create users on first login)
+  userCreationMode: "manual"

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: sky-budget
+description: A Helm chart for Sky Budget - Personal Finance Application
+type: application
+version: 1.0.0
+appVersion: "26.2.1"
+keywords:
+  - budget
+  - finance
+  - personal-finance
+home: https://github.com/skyengpro/actualbudget
+sources:
+  - https://github.com/skyengpro/actualbudget
+maintainers:
+  - name: skyengpro
+    url: https://github.com/skyengpro

@@ -15,7 +15,7 @@
     "e2e": "npx playwright test"
   },
   "dependencies": {
-    "@sky-budget/sync-server": "workspace:*",
+    "@actual-app/sync-server": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "fs-extra": "^11.3.3",
     "promise-retry": "^2.0.1"
@@ -37,9 +37,9 @@
     "appId": "com.skybudget.app",
     "files": [
       "build",
-      "!node_modules/@sky-budget/web",
-      "node_modules/@sky-budget/web/build",
-      "node_modules/@sky-budget/web/package.json",
+      "!node_modules/@actual-app/web",
+      "node_modules/@actual-app/web/build",
+      "node_modules/@actual-app/web/package.json",
       "!node_modules/better-sqlite3/{benchmark,src,bin,docs,deps,build/Release/obj,build/Release/sqlite3.a,build/Release/test_extension.node}",
       "!**/*.js.map",
       "!**/stats.json",

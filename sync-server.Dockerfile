@@ -1,7 +1,7 @@
 FROM node:22-bookworm AS deps
 
 # Install required packages
-RUN apt-get update && apt-get install -y openssl
+RUN apt-get update && apt-get install -y openssl git
 
 WORKDIR /app
 
@@ -31,17 +31,27 @@ COPY packages/ ./packages/
 # Increase memory limit for the build process to 8GB
 ENV NODE_OPTIONS=--max_old_space_size=8192
 
-RUN yarn build:server
+# Build without translation updates (locale already included)
+RUN yarn workspace @actual-app/crdt build && \
+    yarn workspace plugins-service build && \
+    yarn workspace loot-core build:browser && \
+    yarn workspace @actual-app/web build:browser && \
+    yarn workspace @actual-app/sync-server build
 
-# Focus the workspaces in production mode (including @actual-app/web you just built)
-RUN yarn workspaces focus @actual-app/sync-server --production
+# Focus the workspaces in production mode (including dependencies)
+RUN yarn workspaces focus @actual-app/sync-server @actual-app/crdt loot-core --production
 
-# Remove symbolic links for @actual-app/web and @actual-app/sync-server
-RUN rm -rf ./node_modules/@actual-app/web ./node_modules/@actual-app/sync-server
+# Remove symbolic links for @actual-app packages
+RUN rm -rf ./node_modules/@actual-app/web ./node_modules/@actual-app/sync-server ./node_modules/@actual-app/crdt
 
-# Copy in the @actual-app/web artifacts manually, so we don't need the entire packages folder
+# Copy in the built @actual-app packages
 COPY ./packages/desktop-client/package.json ./node_modules/@actual-app/web/package.json
 RUN cp -r ./packages/desktop-client/build ./node_modules/@actual-app/web/build
+
+# Copy @actual-app/crdt package (including proto files)
+COPY ./packages/crdt/package.json ./node_modules/@actual-app/crdt/package.json
+RUN cp -r ./packages/crdt/dist ./node_modules/@actual-app/crdt/dist && \
+    cp ./packages/crdt/src/proto/sync_pb.js ./node_modules/@actual-app/crdt/dist/src/proto/sync_pb.js
 
 FROM node:22-bookworm-slim AS prod
 
