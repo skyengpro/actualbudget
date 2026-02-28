@@ -64,6 +64,8 @@ jobs:
       # This is faster and avoids yarn memory issues
       - name: Set up environment
         uses: ./.github/actions/setup
+        with:
+          download-translations: 'false'  # Translations already in repo
       - name: Build Web
         run: yarn build:server
 
