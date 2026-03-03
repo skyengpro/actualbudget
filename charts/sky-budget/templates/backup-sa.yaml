@@ -1,0 +1,10 @@
+{{- if .Values.backup.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "sky-budget.fullname" . }}-backup
+  labels:
+    {{- include "sky-budget.labels" . | nindent 4 }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ .Values.backup.gcpServiceAccount }}
+{{- end }}

@@ -1,0 +1,75 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "sky-budget.fullname" . }}-backup
+  labels:
+    {{- include "sky-budget.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            {{- include "sky-budget.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: backup
+        spec:
+          serviceAccountName: {{ include "sky-budget.fullname" . }}-backup
+          restartPolicy: OnFailure
+          securityContext:
+            fsGroup: 1001
+          containers:
+            - name: backup
+              image: {{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}
+              imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  BACKUP_NAME="sky-budget-backup-${TIMESTAMP}.tar.gz"
+                  BUCKET="{{ .Values.backup.bucket }}"
+
+                  echo "Starting backup at $(date)"
+                  echo "Creating archive: ${BACKUP_NAME}"
+
+                  # Create tarball of the data directory
+                  # SQLite with WAL mode is safe for file-level copies
+                  cd /data
+                  tar -czf /tmp/${BACKUP_NAME} --exclude='lost+found' .
+
+                  echo "Uploading to gs://${BUCKET}/${BACKUP_NAME}"
+                  gcloud storage cp /tmp/${BACKUP_NAME} gs://${BUCKET}/${BACKUP_NAME}
+
+                  echo "Backup completed successfully at $(date)"
+
+                  # List recent backups
+                  echo "Recent backups:"
+                  gcloud storage ls -l gs://${BUCKET}/ | tail -5
+              resources:
+                {{- toYaml .Values.backup.resources | nindent 16 }}
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: {{ include "sky-budget.fullname" . }}
+            - name: tmp
+              emptyDir:
+                sizeLimit: 1Gi
+{{- end }}
