@@ -958,6 +958,12 @@ const Transaction = memo(function Transaction({
     useState(false);
 
   const onUpdate: TransactionUpdateFunction = (name, value) => {
+    // Block editing of synced transactions (from off-budget sync feature)
+    // These are identified by notes starting with [SYNCED]
+    if (transaction.notes?.startsWith('[SYNCED]')) {
+      return; // Completely block any edits
+    }
+
     // Had some issues with this is called twice which is a problem now that we are showing a warning
     // modal if the transaction is locked. I added a boolean to guard against showing the modal twice.
     // I'm still not completely happy with how the cells update pre/post modal. Sometimes you have to
@@ -2174,7 +2180,13 @@ function TransactionTableInner({
         payees={payees}
         dateFormat={dateFormat}
         hideFraction={hideFraction}
-        onEdit={tableNavigator.onEdit}
+        onEdit={(id, name) => {
+          // Block editing of synced transactions (notes starting with [SYNCED])
+          if (trans.notes?.startsWith('[SYNCED]')) {
+            return;
+          }
+          tableNavigator.onEdit(id, name);
+        }}
         onSave={props.onSave}
         onDelete={props.onDelete}
         onBatchDelete={props.onBatchDelete}

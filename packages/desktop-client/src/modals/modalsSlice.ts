@@ -615,6 +615,10 @@ export type Modal =
       options: { templateId: string };
     }
   | {
+      name: 'sync-off-budget';
+      options: { accountId?: string };
+    }
+  | {
       name: 'reimbursement-edit';
       options: { id?: string; onSave?: () => void };
     }

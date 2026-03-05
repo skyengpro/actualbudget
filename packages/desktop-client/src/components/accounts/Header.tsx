@@ -72,6 +72,7 @@ type AccountHeaderProps = {
   showExtraBalances: boolean;
   showCleared: boolean;
   showReconciled: boolean;
+  showSynced: boolean;
   showEmptyMessage: boolean;
   balanceQuery: ComponentProps<typeof ReconcilingMessage>['balanceQuery'];
   reconcileAmount?: number | null;
@@ -148,6 +149,7 @@ export function AccountHeader({
   showExtraBalances,
   showCleared,
   showReconciled,
+  showSynced,
   showEmptyMessage,
   balanceQuery,
   reconcileAmount,
@@ -513,6 +515,7 @@ export function AccountHeader({
                       showBalances={showBalances}
                       showCleared={showCleared}
                       showReconciled={showReconciled}
+                      showSynced={showSynced}
                       onMenuSelect={onMenuSelect}
                     />
                   </Dialog>
@@ -736,6 +739,7 @@ type AccountMenuProps = {
   canShowBalances: boolean;
   showCleared: boolean;
   showReconciled: boolean;
+  showSynced: boolean;
   isSorted: boolean;
   onMenuSelect: (
     item:
@@ -748,7 +752,9 @@ type AccountMenuProps = {
       | 'remove-sorting'
       | 'toggle-cleared'
       | 'toggle-reconciled'
-      | 'toggle-net-worth-chart',
+      | 'toggle-net-worth-chart'
+      | 'sync-off-budget'
+      | 'toggle-synced',
   ) => void;
 };
 
@@ -760,6 +766,7 @@ function AccountMenu({
   canShowBalances,
   showCleared,
   showReconciled,
+  showSynced,
   isSorted,
   onMenuSelect,
 }: AccountMenuProps) {
@@ -831,6 +838,20 @@ function AccountMenu({
         ...(account.closed
           ? [{ name: 'reopen', text: t('Reopen account') } as const]
           : [{ name: 'close', text: t('Close account') } as const]),
+        ...(account.offbudget && !account.closed
+          ? [
+              {
+                name: 'sync-off-budget',
+                text: t('Sync to Budget'),
+              } as const,
+              {
+                name: 'toggle-synced',
+                text: showSynced
+                  ? t('Hide synced transactions')
+                  : t('Show synced transactions'),
+              } as const,
+            ]
+          : []),
       ]}
     />
   );

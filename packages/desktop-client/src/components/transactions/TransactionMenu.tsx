@@ -135,6 +135,12 @@ export function TransactionMenu({
     return areNoReconciledTransactions && areAllSplitTransactions;
   }, [selectedIds, types, getTransaction]);
 
+  // Check if any selected transaction is a synced transaction (notes starting with [SYNCED])
+  const hasSyncedTransaction = useMemo(() => {
+    const transactions = selectedIds.map(id => getTransaction(id));
+    return transactions.some(tx => tx?.notes?.startsWith('[SYNCED]'));
+  }, [selectedIds, getTransaction]);
+
   function onViewSchedule() {
     const firstId = selectedIds[0];
     let scheduleId;
@@ -164,7 +170,10 @@ export function TransactionMenu({
             onDuplicate(selectedIds);
             break;
           case 'delete':
-            onDelete(selectedIds);
+            // Don't allow deleting synced transactions
+            if (!hasSyncedTransaction) {
+              onDelete(selectedIds);
+            }
             break;
           case 'unsplit-transactions':
             onMakeAsNonSplitTransactions(selectedIds);
@@ -214,7 +223,9 @@ export function TransactionMenu({
               ...(ambiguousDuplication
                 ? []
                 : [{ name: 'duplicate', text: t('Duplicate') }]),
-              { name: 'delete', text: t('Delete') },
+              ...(hasSyncedTransaction
+                ? []
+                : [{ name: 'delete', text: t('Delete') }]),
               ...(linked
                 ? [
                     ...(selectedIds.length === 1

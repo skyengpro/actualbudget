@@ -29,6 +29,7 @@ export type SyncedPrefs = Partial<
     | `show-extra-balances-${string}`
     | `hide-cleared-${string}`
     | `hide-reconciled-${string}`
+    | `hide-synced-${string}`
     // TODO: pull from src/components/modals/ImportTransactions.js
     | `parse-date-${string}-${'csv' | 'qif'}`
     | `csv-mappings-${string}`

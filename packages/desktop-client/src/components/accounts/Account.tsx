@@ -49,6 +49,7 @@ import {
 } from '@desktop-client/accounts';
 import { markAccountRead } from '@desktop-client/accounts/accountsSlice';
 import type { SavedFilter } from '@desktop-client/components/filters/SavedFilterMenuButton';
+import { Field, Row } from '@desktop-client/components/table';
 import { TransactionList } from '@desktop-client/components/transactions/TransactionList';
 import { validateAccountName } from '@desktop-client/components/util/accountValidation';
 import { useAccountPreviewTransactions } from '@desktop-client/hooks/useAccountPreviewTransactions';
@@ -216,6 +217,8 @@ type AccountInternalProps = {
   setShowCleared: (newValue: boolean) => void;
   showReconciled: boolean;
   setShowReconciled: (newValue: boolean) => void;
+  showSynced: boolean;
+  setShowSynced: (newValue: boolean) => void;
   showExtraBalances?: boolean;
   setShowExtraBalances: (newValue: boolean) => void;
   modalShowing?: boolean;
@@ -269,6 +272,7 @@ type AccountInternalState = {
   showCleared?: boolean | undefined;
   prevShowCleared?: boolean | undefined;
   showReconciled: boolean;
+  showSynced: boolean;
   nameError: string;
   isAdding: boolean;
   modalShowing?: boolean;
@@ -319,6 +323,7 @@ class AccountInternal extends PureComponent<
       balances: null,
       showCleared: props.showCleared,
       showReconciled: props.showReconciled,
+      showSynced: props.showSynced,
       nameError: '',
       isAdding: false,
       sort: null,
@@ -476,6 +481,16 @@ class AccountInternal extends PureComponent<
       query = query.filter({ reconciled: { $eq: false } });
     }
 
+    // Filter out synced transactions (notes starting with [SYNCED]) if hidden
+    if (!this.state.showSynced) {
+      query = query.filter({
+        $or: [
+          { notes: null },
+          { notes: { $notlike: '[SYNCED]%' } },
+        ],
+      });
+    }
+
     this.paged = pagedQuery(query.select('*'), {
       onData: async (groupedData, prevData) => {
         const data = ungroupTransactions([...groupedData]);
@@ -538,6 +553,7 @@ class AccountInternal extends PureComponent<
           balances: null,
           showCleared: nextProps.showCleared,
           showReconciled: nextProps.showReconciled,
+          showSynced: nextProps.showSynced,
           reconcileAmount: null,
         },
         () => {
@@ -780,7 +796,9 @@ class AccountInternal extends PureComponent<
       | 'remove-sorting'
       | 'toggle-cleared'
       | 'toggle-reconciled'
-      | 'toggle-net-worth-chart',
+      | 'toggle-net-worth-chart'
+      | 'sync-off-budget'
+      | 'toggle-synced',
   ) => {
     const accountId = this.props.accountId!;
     const account = this.props.accounts.find(
@@ -888,6 +906,31 @@ class AccountInternal extends PureComponent<
           this.props.setShowNetWorthChart(false);
         } else {
           this.props.setShowNetWorthChart(true);
+        }
+        break;
+      case 'sync-off-budget':
+        this.props.dispatch(
+          pushModal({
+            modal: {
+              name: 'sync-off-budget',
+              options: {
+                accountId,
+              },
+            },
+          }),
+        );
+        break;
+      case 'toggle-synced':
+        if (this.state.showSynced) {
+          this.props.setShowSynced(false);
+          this.setState({ showSynced: false }, () =>
+            this.fetchTransactions(this.state.filterConditions),
+          );
+        } else {
+          this.props.setShowSynced(true);
+          this.setState({ showSynced: true }, () =>
+            this.fetchTransactions(this.state.filterConditions),
+          );
         }
         break;
       default:
@@ -1723,6 +1766,7 @@ class AccountInternal extends PureComponent<
       balances,
       showCleared,
       showReconciled,
+      showSynced,
       filteredAmount,
     } = this.state;
 
@@ -1791,6 +1835,7 @@ class AccountInternal extends PureComponent<
                 showExtraBalances={showExtraBalances ?? false}
                 showCleared={showCleared ?? false}
                 showReconciled={showReconciled ?? false}
+                showSynced={showSynced ?? false}
                 showEmptyMessage={showEmptyMessage ?? false}
                 balanceQuery={balanceQuery}
                 canCalculateBalance={this?.canCalculateBalance ?? undefined}
@@ -1911,6 +1956,35 @@ class AccountInternal extends PureComponent<
                   onCreatePayee={this.onCreatePayee}
                   onApplyFilter={this.onApplyFilter}
                 />
+                {/* Show synced transactions toggle for off-budget accounts */}
+                {account?.offbudget && !showSynced && (
+                  <Row
+                    height={43}
+                    inset={15}
+                    style={{
+                      cursor: 'pointer',
+                      backgroundColor: 'transparent',
+                      ':hover': { backgroundColor: theme.tableRowBackgroundHover },
+                    }}
+                    onClick={() => {
+                      this.props.setShowSynced(true);
+                      this.setState({ showSynced: true }, () =>
+                        this.fetchTransactions(this.state.filterConditions),
+                      );
+                    }}
+                  >
+                    <Field
+                      width="flex"
+                      style={{
+                        fontStyle: 'italic',
+                        textAlign: 'center',
+                        color: theme.tableText,
+                      }}
+                    >
+                      <Trans>Show synced transactions</Trans>
+                    </Field>
+                  </Row>
+                )}
               </View>
             </View>
           </SelectedProviderWithItems>
@@ -1989,6 +2063,9 @@ export function Account() {
   const [hideReconciled, setHideReconciled] = useSyncedPref(
     `hide-reconciled-${params.id}`,
   );
+  const [hideSynced, setHideSynced] = useSyncedPref(
+    `hide-synced-${params.id}`,
+  );
   const [showExtraBalances, setShowExtraBalances] = useSyncedPref(
     `show-extra-balances-${params.id || 'all-accounts'}`,
   );
@@ -2044,6 +2121,8 @@ export function Account() {
           setShowCleared={val => setHideCleared(String(!val))}
           showReconciled={String(hideReconciled) !== 'true'}
           setShowReconciled={val => setHideReconciled(String(!val))}
+          showSynced={String(hideSynced) !== 'true'}
+          setShowSynced={val => setHideSynced(String(!val))}
           showExtraBalances={String(showExtraBalances) === 'true'}
           setShowExtraBalances={extraBalances =>
             setShowExtraBalances(String(extraBalances))

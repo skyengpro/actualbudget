@@ -66,6 +66,7 @@ import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
 import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TemplateEditModal } from './modals/TemplateEditModal';
 import { TemplateApplyModal } from './modals/TemplateApplyModal';
+import { SyncOffBudgetModal } from './modals/SyncOffBudgetModal';
 import { BudgetTemplatesModal } from './modals/BudgetTemplatesModal';
 import { BudgetGoalEditModal } from './modals/BudgetGoalEditModal';
 import { BudgetScenariosModal } from './modals/BudgetScenariosModal';
@@ -420,6 +421,9 @@ export function Modals() {
 
         case 'template-apply':
           return <TemplateApplyModal key={key} {...modal.options} />;
+
+        case 'sync-off-budget':
+          return <SyncOffBudgetModal key={key} {...modal.options} />;
 
         case 'reimbursement-edit':
           return <ReimbursementEditModal key={key} {...modal.options} />;

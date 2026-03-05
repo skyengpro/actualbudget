@@ -38,7 +38,17 @@ export const TemplatesTable = memo(function TemplatesTable({
     return payee?.name || '-';
   };
 
-  const getCategoryName = (id: string | null | undefined) => {
+  const isTransferPayee = (payeeId: string | null | undefined) => {
+    if (!payeeId) return false;
+    const payee = payees.find(p => p.id === payeeId);
+    return payee?.transfer_acct != null;
+  };
+
+  const getCategoryName = (id: string | null | undefined, payeeId: string | null | undefined) => {
+    // For transfers, show "Transfer" instead of "-"
+    if (isTransferPayee(payeeId)) {
+      return t('Transfer');
+    }
     if (!id) return '-';
     const category = categories.find(c => c.id === id);
     return category?.name || '-';
@@ -97,7 +107,7 @@ export const TemplatesTable = memo(function TemplatesTable({
             >
               <td style={{ padding: '10px 12px' }}>{template.name}</td>
               <td style={{ padding: '10px 12px' }}>{getPayeeName(template.payee)}</td>
-              <td style={{ padding: '10px 12px' }}>{getCategoryName(template.category)}</td>
+              <td style={{ padding: '10px 12px', fontStyle: isTransferPayee(template.payee) ? 'italic' : 'normal' }}>{getCategoryName(template.category, template.payee)}</td>
               <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                 {template.amount != null ? format(template.amount, 'financial') : '-'}
               </td>
