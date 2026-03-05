@@ -38,7 +38,106 @@ type BudgetScenariosModalProps = Extract<
 type MainView = 'menu' | 'snapshots' | 'compare-months';
 type SnapshotView = 'list' | 'create' | 'select-month' | 'compare';
 
-// Generate list of months for selection (last 24 months + next 6 months)
+// Calendar-style month picker component
+function MonthCalendar({
+  selectedMonths,
+  onToggleMonth,
+}: {
+  selectedMonths: string[];
+  onToggleMonth: (month: string) => void;
+}) {
+  const currentMonth = monthUtils.currentMonth();
+  const currentYear = parseInt(currentMonth.split('-')[0]);
+  const [viewYear, setViewYear] = useState(currentYear);
+
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  const getMonthKey = (year: number, monthIndex: number) => {
+    return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+  };
+
+  const isCurrentMonth = (year: number, monthIndex: number) => {
+    return getMonthKey(year, monthIndex) === currentMonth;
+  };
+
+  const isFutureMonth = (year: number, monthIndex: number) => {
+    return getMonthKey(year, monthIndex) > currentMonth;
+  };
+
+  return (
+    <View>
+      {/* Year Navigation */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          marginBottom: 12,
+        }}
+      >
+        <Button
+          variant="bare"
+          onPress={() => setViewYear(y => y - 1)}
+          style={{ padding: '4px 12px' }}
+        >
+          <Text style={{ fontSize: 16 }}>←</Text>
+        </Button>
+        <Text style={{ fontSize: 16, fontWeight: 600, minWidth: 60, textAlign: 'center' }}>
+          {viewYear}
+        </Text>
+        <Button
+          variant="bare"
+          onPress={() => setViewYear(y => y + 1)}
+          style={{ padding: '4px 12px' }}
+        >
+          <Text style={{ fontSize: 16 }}>→</Text>
+        </Button>
+      </View>
+
+      {/* Month Grid */}
+      <View
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 6,
+        }}
+      >
+        {monthNames.map((name, idx) => {
+          const monthKey = getMonthKey(viewYear, idx);
+          const isSelected = selectedMonths.includes(monthKey);
+          const isCurrent = isCurrentMonth(viewYear, idx);
+          const isFuture = isFutureMonth(viewYear, idx);
+
+          return (
+            <Button
+              key={monthKey}
+              variant={isSelected ? 'primary' : 'bare'}
+              onPress={() => onToggleMonth(monthKey)}
+              style={{
+                padding: '10px 8px',
+                border: isCurrent
+                  ? `2px solid ${theme.pageTextLink}`
+                  : `1px solid ${isSelected ? 'transparent' : theme.tableBorder}`,
+                opacity: isFuture ? 0.6 : 1,
+                borderRadius: 6,
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: isCurrent ? 600 : 400 }}>
+                {name}
+              </Text>
+            </Button>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// Generate list of months for selection (for dropdowns)
 function getMonthOptions(): Array<readonly [string, string]> {
   const months: Array<readonly [string, string]> = [];
   const currentMonth = monthUtils.currentMonth();
@@ -48,7 +147,7 @@ function getMonthOptions(): Array<readonly [string, string]> {
     months.push([month, monthUtils.format(month, 'MMMM yyyy')] as const);
   }
 
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 12; i++) {
     const month = monthUtils.addMonths(currentMonth, i);
     months.push([month, monthUtils.format(month, 'MMMM yyyy')] as const);
   }
@@ -483,7 +582,7 @@ export function BudgetScenariosModal({ month }: BudgetScenariosModalProps) {
             rightContent={<ModalCloseButton onPress={close} />}
           />
 
-          <View style={{ padding: 16, minWidth: 600 }}>
+          <View style={{ padding: 20, minWidth: 700, minHeight: 450 }}>
             {error && <FormError>{error}</FormError>}
 
             {/* Main Menu */}
@@ -528,34 +627,19 @@ export function BudgetScenariosModal({ month }: BudgetScenariosModalProps) {
                   <Trans>Select months to compare (click to toggle):</Trans>
                 </Text>
 
-                <View
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 6,
-                    marginBottom: 16,
-                    maxHeight: 200,
-                    overflow: 'auto',
-                  }}
-                >
-                  {monthOptions.slice(0, 24).map(([m, label]) => (
-                    <Button
-                      key={m}
-                      variant={selectedMonths.includes(m) ? 'primary' : 'bare'}
-                      onPress={() => toggleMonth(m)}
-                      style={{
-                        padding: '6px 12px',
-                        border: `1px solid ${selectedMonths.includes(m) ? 'transparent' : theme.tableBorder}`,
-                      }}
-                    >
-                      <Text style={{ fontSize: 11 }}>{monthUtils.format(m, 'MMM yyyy')}</Text>
-                    </Button>
-                  ))}
-                </View>
+                <MonthCalendar
+                  selectedMonths={selectedMonths}
+                  onToggleMonth={toggleMonth}
+                />
 
-                <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 12 }}>
-                  {t('{{count}} months selected', { count: selectedMonths.length })}
-                </Text>
+                <View style={{ marginTop: 16, marginBottom: 12 }}>
+                  <Text style={{ fontSize: 11, color: theme.pageTextSubdued }}>
+                    {t('{{count}} months selected', { count: selectedMonths.length })}
+                    {selectedMonths.length > 0 && (
+                      <>: {selectedMonths.sort().map(m => monthUtils.format(m, 'MMM yyyy')).join(', ')}</>
+                    )}
+                  </Text>
+                </View>
 
                 <ModalButtons>
                   <Button variant="bare" onPress={() => setMainView('menu')}>
