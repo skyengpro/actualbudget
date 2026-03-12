@@ -5,9 +5,8 @@ import { Button } from '@actual-app/components/button';
 import { Input } from '@actual-app/components/input';
 import { Select } from '@actual-app/components/select';
 import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
-import { View } from '@actual-app/components/view';
+import { Tooltip } from '@actual-app/components/tooltip';
 
 import * as monthUtils from 'loot-core/shared/months';
 import type {
@@ -19,6 +18,8 @@ import type {
 import { AmountInput } from '@desktop-client/components/util/AmountInput';
 import { useCategories } from '@desktop-client/hooks/useCategories';
 import { useFormat } from '@desktop-client/hooks/useFormat';
+import { pushModal } from '@desktop-client/modals/modalsSlice';
+import { useDispatch } from '@desktop-client/redux';
 
 type WhatIfPanelProps = {
   scenario: WhatIfScenario | null;
@@ -39,68 +40,61 @@ function generateId() {
   return `hypothetical-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function Checkbox({
-  checked,
-  onChange,
-  label,
-  sublabel,
-  strikethrough,
+function InsightCard({
+  title,
+  subtitle,
+  children,
 }: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  sublabel?: string;
-  strikethrough?: boolean;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <View
-      onClick={() => onChange(!checked)}
+    <div
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        padding: '10px 12px',
-        backgroundColor: theme.tableRowBackgroundHover,
-        borderRadius: 6,
-        cursor: 'pointer',
-        opacity: strikethrough ? 0.6 : 1,
-        transition: 'all 0.15s ease',
+        backgroundColor: theme.tableBackground,
+        borderRadius: 8,
+        padding: 16,
+        border: `1px solid ${theme.tableBorder}`,
       }}
     >
-      <View
+      <div
         style={{
-          width: 18,
-          height: 18,
-          borderRadius: 4,
-          border: `2px solid ${checked ? theme.pageTextLink : theme.tableBorder}`,
-          backgroundColor: checked ? theme.pageTextLink : 'transparent',
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.15s ease',
+          gap: 8,
+          marginBottom: 16,
+          paddingBottom: 12,
+          borderBottom: `1px solid ${theme.tableBorder}`,
         }}
       >
-        {checked && (
-          <Text style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>✓</Text>
-        )}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontSize: 13,
-            color: theme.pageText,
-            textDecoration: strikethrough ? 'line-through' : 'none',
-          }}
-        >
-          {label}
-        </Text>
-        {sublabel && (
-          <Text style={{ fontSize: 11, color: theme.pageTextSubdued }}>
-            {sublabel}
-          </Text>
-        )}
-      </View>
-    </View>
+        <div style={{ flex: 1 }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: theme.pageText,
+              letterSpacing: 0.3,
+            }}
+          >
+            {title}
+          </span>
+          {subtitle && (
+            <div
+              style={{
+                fontSize: 11,
+                color: theme.pageTextSubdued,
+                marginTop: 4,
+              }}
+            >
+              {subtitle}
+            </div>
+          )}
+        </div>
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -112,6 +106,7 @@ export function WhatIfPanel({
 }: WhatIfPanelProps) {
   const { t } = useTranslation();
   const format = useFormat();
+  const dispatch = useDispatch();
   const { data: categoriesData } = useCategories();
 
   const categories = categoriesData?.list || [];
@@ -195,6 +190,30 @@ export function WhatIfPanel({
     onScenarioChange(null);
   };
 
+  const handleCreateSchedule = (item: HypotheticalItem) => {
+    dispatch(
+      pushModal({
+        modal: {
+          name: 'schedule-edit',
+          options: {
+            template: {
+              id: item.id,
+              name: item.payeeName,
+              amount: item.amount,
+              payee: null,
+              category: item.categoryId,
+              notes: item.isRecurring
+                ? `${item.frequency} from ${item.startDate}`
+                : `One-time on ${item.startDate}`,
+              active: true,
+              tombstone: false,
+            },
+          },
+        },
+      }),
+    );
+  };
+
   const categoryOptions: Array<[string, string]> = [
     ['', t('No Category')],
     ...expenseCategories.map((c: CategoryEntity) => [c.id, c.name] as [string, string]),
@@ -216,45 +235,16 @@ export function WhatIfPanel({
   );
 
   return (
-    <View style={{ gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Scenario Impact Summary */}
       {scenarioComparison && hasChanges && (
-        <View
-          style={{
-            backgroundColor: theme.tableBackground,
-            borderRadius: 8,
-            padding: 16,
-            border: `1px solid ${theme.tableBorder}`,
-          }}
-        >
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-              paddingBottom: 12,
-              borderBottom: `1px solid ${theme.tableBorder}`,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: theme.pageText,
-                letterSpacing: 0.3,
-              }}
-            >
-              {t('Scenario Impact')}
-            </Text>
-          </View>
-          <View style={{ display: 'flex', flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
-            <View style={{ minWidth: 140 }}>
-              <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
+        <InsightCard title={t('Scenario Impact')}>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 140 }}>
+              <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
                 {t('Current Forecast')}
-              </Text>
-              <Text
+              </div>
+              <span
                 style={{
                   fontSize: 18,
                   fontWeight: 600,
@@ -263,13 +253,13 @@ export function WhatIfPanel({
                 }}
               >
                 {format(scenarioComparison.baseline.endingBalance, 'financial')}
-              </Text>
-            </View>
-            <View style={{ minWidth: 140 }}>
-              <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
+              </span>
+            </div>
+            <div style={{ minWidth: 140 }}>
+              <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
                 {t('With Scenario')}
-              </Text>
-              <Text
+              </div>
+              <span
                 style={{
                   fontSize: 18,
                   fontWeight: 600,
@@ -278,13 +268,13 @@ export function WhatIfPanel({
                 }}
               >
                 {format(scenarioComparison.scenario.endingBalance, 'financial')}
-              </Text>
-            </View>
-            <View style={{ minWidth: 140 }}>
-              <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
+              </span>
+            </div>
+            <div style={{ minWidth: 140 }}>
+              <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
                 {t('Difference')}
-              </Text>
-              <Text
+              </div>
+              <span
                 style={{
                   fontSize: 18,
                   fontWeight: 700,
@@ -297,120 +287,61 @@ export function WhatIfPanel({
               >
                 {scenarioComparison.difference >= 0 ? '+' : ''}
                 {format(scenarioComparison.difference, 'financial')}
-              </Text>
-            </View>
-          </View>
-        </View>
+              </span>
+            </div>
+          </div>
+        </InsightCard>
       )}
 
       {/* Introduction when no scenario */}
       {!hasChanges && (
-        <View
-          style={{
-            backgroundColor: theme.tableBackground,
-            borderRadius: 8,
-            padding: 16,
-            border: `1px solid ${theme.tableBorder}`,
-          }}
-        >
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-              paddingBottom: 12,
-              borderBottom: `1px solid ${theme.tableBorder}`,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: theme.pageText,
-                letterSpacing: 0.3,
-              }}
-            >
-              {t('Simulate Financial Scenarios')}
-            </Text>
-          </View>
-          <Text style={{ fontSize: 12, color: theme.pageTextSubdued, lineHeight: 1.5 }}>
+        <InsightCard title={t('Simulate Financial Scenarios')}>
+          <span style={{ fontSize: 12, color: theme.pageTextSubdued, lineHeight: 1.5 }}>
             {t('Add hypothetical transactions or toggle existing schedules to see how they would affect your forecast.')}
-          </Text>
-        </View>
+          </span>
+        </InsightCard>
       )}
 
       {/* Add Hypothetical Transaction */}
-      <View
-        style={{
-          backgroundColor: theme.tableBackground,
-          borderRadius: 8,
-          padding: 16,
-          border: `1px solid ${theme.tableBorder}`,
-        }}
-      >
-        <View
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 16,
-            paddingBottom: 12,
-            borderBottom: `1px solid ${theme.tableBorder}`,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: theme.pageText,
-              letterSpacing: 0.3,
-            }}
-          >
-            {t('Add Hypothetical Transaction')}
-          </Text>
-        </View>
-
+      <InsightCard title={t('Add Hypothetical Transaction')}>
         {/* Row 1: Payee, Amount, Category */}
-        <View style={{ display: 'flex', flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-          <View style={{ flex: '2 1 200px', minWidth: 150 }}>
-            <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: '2 1 200px', minWidth: 150 }}>
+            <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
               {t('Payee Name')}
-            </Text>
+            </div>
             <Input
               value={newPayeeName}
               onChange={e => setNewPayeeName(e.target.value)}
               placeholder={t('e.g., Netflix, Gym membership')}
               style={{ width: '100%' }}
             />
-          </View>
-          <View style={{ flex: '1 1 120px', minWidth: 100 }}>
-            <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
+          </div>
+          <div style={{ flex: '1 1 120px', minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
               {t('Amount')}
-            </Text>
+            </div>
             <AmountInput
               value={newAmount}
               onUpdate={setNewAmount}
               style={{ width: '100%' }}
             />
-          </View>
-          <View style={{ flex: '1 1 150px', minWidth: 120 }}>
-            <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
+          </div>
+          <div style={{ flex: '1 1 150px', minWidth: 120 }}>
+            <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
               {t('Category')}
-            </Text>
+            </div>
             <Select
               options={categoryOptions}
               value={newCategoryId}
               onChange={setNewCategoryId}
             />
-          </View>
-        </View>
+          </div>
+        </div>
 
         {/* Row 2: Recurring, Frequency, Start Date, Add Button */}
-        <View style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <View
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div
             onClick={() => setNewIsRecurring(!newIsRecurring)}
             style={{
               display: 'flex',
@@ -424,7 +355,7 @@ export function WhatIfPanel({
               border: `1px solid ${newIsRecurring ? theme.pageTextLink : 'transparent'}`,
             }}
           >
-            <View
+            <div
               style={{
                 width: 16,
                 height: 16,
@@ -437,38 +368,38 @@ export function WhatIfPanel({
               }}
             >
               {newIsRecurring && (
-                <Text style={{ color: 'white', fontSize: 10, fontWeight: 700 }}>✓</Text>
+                <span style={{ color: 'white', fontSize: 10, fontWeight: 700 }}>✓</span>
               )}
-            </View>
-            <Text style={{ fontSize: 12, color: theme.pageText }}>{t('Recurring')}</Text>
-          </View>
+            </div>
+            <span style={{ fontSize: 12, color: theme.pageText }}>{t('Recurring')}</span>
+          </div>
 
           {newIsRecurring && (
-            <View style={{ minWidth: 100 }}>
-              <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
+            <div style={{ minWidth: 100 }}>
+              <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
                 {t('Frequency')}
-              </Text>
+              </div>
               <Select
                 options={frequencyOptions}
                 value={newFrequency}
                 onChange={v => setNewFrequency(v as 'weekly' | 'biweekly' | 'monthly')}
               />
-            </View>
+            </div>
           )}
 
-          <View style={{ minWidth: 130 }}>
-            <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
+          <div style={{ minWidth: 130 }}>
+            <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 6 }}>
               {t('Start Date')}
-            </Text>
+            </div>
             <Input
               type="date"
               value={newStartDate}
               onChange={e => setNewStartDate(e.target.value)}
               style={{ width: '100%' }}
             />
-          </View>
+          </div>
 
-          <View style={{ flex: 1 }} />
+          <div style={{ flex: 1 }} />
 
           <Button
             variant="primary"
@@ -477,44 +408,15 @@ export function WhatIfPanel({
           >
             {t('Add to Scenario')}
           </Button>
-        </View>
-      </View>
+        </div>
+      </InsightCard>
 
       {/* Hypothetical Items List */}
       {currentScenario.hypotheticalItems.length > 0 && (
-        <View
-          style={{
-            backgroundColor: theme.tableBackground,
-            borderRadius: 8,
-            padding: 16,
-            border: `1px solid ${theme.tableBorder}`,
-          }}
-        >
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-              marginBottom: 12,
-              paddingBottom: 12,
-              borderBottom: `1px solid ${theme.tableBorder}`,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: theme.pageText,
-                letterSpacing: 0.3,
-              }}
-            >
-              {t('Your Hypothetical Transactions')}
-            </Text>
-          </View>
-          <View style={{ gap: 8 }}>
+        <InsightCard title={t('Your Hypothetical Transactions')}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {currentScenario.hypotheticalItems.map(item => (
-              <View
+              <div
                 key={item.id}
                 style={{
                   display: 'flex',
@@ -526,19 +428,19 @@ export function WhatIfPanel({
                   gap: 12,
                 }}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, color: theme.pageText, fontWeight: 500 }}>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, color: theme.pageText, fontWeight: 500 }}>
                     {item.payeeName}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginTop: 2 }}>
+                  </span>
+                  <div style={{ fontSize: 11, color: theme.pageTextSubdued, marginTop: 2 }}>
                     {item.isRecurring ? t('{{frequency}} from {{date}}', {
                       frequency: item.frequency,
                       date: monthUtils.format(item.startDate, 'MMM d'),
                     }) : monthUtils.format(item.startDate, 'MMM d')}
                     {item.categoryName && ` · ${item.categoryName}`}
-                  </Text>
-                </View>
-                <Text
+                  </div>
+                </div>
+                <span
                   style={{
                     fontSize: 14,
                     color: item.amount > 0 ? theme.noticeTextLight : theme.errorText,
@@ -548,69 +450,40 @@ export function WhatIfPanel({
                 >
                   {item.amount > 0 ? '+' : ''}
                   {format(item.amount, 'financial')}
-                </Text>
+                </span>
+                <Tooltip content={t('Create as scheduled transaction')} placement="top">
+                  <Button
+                    variant="bare"
+                    onPress={() => handleCreateSchedule(item)}
+                    style={{ padding: 6 }}
+                  >
+                    <span style={{ color: theme.pageTextLink, fontSize: 14 }}>📅</span>
+                  </Button>
+                </Tooltip>
                 <Button
                   variant="bare"
                   onPress={() => handleRemoveItem(item.id)}
                   style={{ padding: 6 }}
                 >
-                  <Text style={{ color: theme.errorText, fontSize: 16 }}>×</Text>
+                  <span style={{ color: theme.errorText, fontSize: 16 }}>×</span>
                 </Button>
-              </View>
+              </div>
             ))}
-          </View>
-        </View>
+          </div>
+        </InsightCard>
       )}
 
       {/* Toggle Scheduled Transactions */}
       {uniqueSchedules.length > 0 && (
-        <View
-          style={{
-            backgroundColor: theme.tableBackground,
-            borderRadius: 8,
-            padding: 16,
-            border: `1px solid ${theme.tableBorder}`,
-          }}
+        <InsightCard
+          title={t('Toggle Existing Schedules')}
+          subtitle={t('Uncheck to see what happens if you remove a recurring transaction')}
         >
-          <View
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8,
-              marginBottom: 12,
-              paddingBottom: 12,
-              borderBottom: `1px solid ${theme.tableBorder}`,
-            }}
-          >
-            <View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: theme.pageText,
-                  letterSpacing: 0.3,
-                }}
-              >
-                {t('Toggle Existing Schedules')}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: theme.pageTextSubdued,
-                  marginTop: 4,
-                }}
-              >
-                {t('Uncheck to see what happens if you remove a recurring transaction')}
-              </Text>
-            </View>
-          </View>
-          <View style={{ gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {uniqueSchedules.slice(0, 10).map(item => {
               const isEnabled = !currentScenario.disabledScheduleIds.includes(item.scheduleId);
               return (
-                <View
+                <div
                   key={item.scheduleId}
                   onClick={() => handleToggleSchedule(item.scheduleId, !isEnabled)}
                   style={{
@@ -625,7 +498,7 @@ export function WhatIfPanel({
                     opacity: isEnabled ? 1 : 0.5,
                   }}
                 >
-                  <View
+                  <div
                     style={{
                       width: 18,
                       height: 18,
@@ -638,10 +511,10 @@ export function WhatIfPanel({
                     }}
                   >
                     {isEnabled && (
-                      <Text style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>✓</Text>
+                      <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>✓</span>
                     )}
-                  </View>
-                  <Text
+                  </div>
+                  <span
                     style={{
                       flex: 1,
                       fontSize: 13,
@@ -650,8 +523,8 @@ export function WhatIfPanel({
                     }}
                   >
                     {item.payeeName}
-                  </Text>
-                  <Text
+                  </span>
+                  <span
                     style={{
                       fontSize: 13,
                       color: item.amount > 0 ? theme.noticeTextLight : theme.errorText,
@@ -661,12 +534,12 @@ export function WhatIfPanel({
                   >
                     {item.amount > 0 ? '+' : ''}
                     {format(item.amount, 'financial')}
-                  </Text>
-                </View>
+                  </span>
+                </div>
               );
             })}
             {uniqueSchedules.length > 10 && (
-              <Text
+              <span
                 style={{
                   fontSize: 11,
                   color: theme.pageTextSubdued,
@@ -674,22 +547,22 @@ export function WhatIfPanel({
                 }}
               >
                 {t('And {{count}} more...', { count: uniqueSchedules.length - 10 })}
-              </Text>
+              </span>
             )}
-          </View>
-        </View>
+          </div>
+        </InsightCard>
       )}
 
       {/* Reset Button */}
       {hasChanges && (
-        <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
           <Button variant="bare" onPress={handleReset}>
-            <Text style={{ color: theme.errorText, fontSize: 13 }}>
+            <span style={{ color: theme.errorText, fontSize: 13 }}>
               {t('Reset Scenario')}
-            </Text>
+            </span>
           </Button>
-        </View>
+        </div>
       )}
-    </View>
+    </div>
   );
 }
