@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { Select } from '@actual-app/components/select';
-import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
-import { View } from '@actual-app/components/view';
 
 import * as monthUtils from 'loot-core/shared/months';
 
@@ -21,9 +19,59 @@ import { SpendingAlerts } from './SpendingAlerts';
 import { createSpendingInsightsSpreadsheet } from './spreadsheet';
 import { TopPayeesChart } from './TopPayeesChart';
 
+function SegmentedControl({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        backgroundColor: theme.tableBackground,
+        borderRadius: 4,
+        padding: 2,
+        border: `1px solid ${theme.tableBorder}`,
+      }}
+    >
+      {options.map(option => (
+        <div
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 3,
+            backgroundColor: value === option.value ? theme.pageBackground : 'transparent',
+            boxShadow: value === option.value ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: value === option.value ? 600 : 400,
+              color: value === option.value ? theme.pageText : theme.pageTextSubdued,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {option.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SpendingInsights() {
   const { t } = useTranslation();
   const format = useFormat();
+  const { isNarrowWidth } = useResponsive();
   const [months, setMonths] = useState(6);
   const [categoryGroupId, setCategoryGroupId] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
@@ -54,12 +102,6 @@ export function SpendingInsights() {
   );
 
   const data = useReport('spending-insights', getInsightsData);
-
-  const monthOptions: Array<[string, string]> = [
-    ['3', t('Last 3 months')],
-    ['6', t('Last 6 months')],
-    ['12', t('Last 12 months')],
-  ];
 
   // Build category group options
   const categoryGroupOptions: Array<[string, string]> = useMemo(() => {
@@ -112,109 +154,216 @@ export function SpendingInsights() {
     <Page
       header={<PageHeader title={t('Spending Insights')} />}
     >
-      <View
+      {/* Configuration Bar */}
+      <div
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          marginTop: 10,
-          marginBottom: 20,
-          gap: 24,
-          flexWrap: 'wrap',
+          display: 'flex',
+          flexDirection: isNarrowWidth ? 'column' : 'row',
+          alignItems: isNarrowWidth ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '12px 0',
+          marginBottom: 16,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Time range:')}</Text>
-          <Select
-            options={monthOptions}
+        {/* Time Range - Segmented Control */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: theme.pageTextSubdued,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t('Period:')}
+          </span>
+          <SegmentedControl
+            options={[
+              { value: '3', label: '3M' },
+              { value: '6', label: '6M' },
+              { value: '12', label: '12M' },
+            ]}
             value={String(validMonths)}
             onChange={handleMonthsChange}
           />
-        </View>
+        </div>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Group:')}</Text>
-          <Select
-            options={categoryGroupOptions}
-            value={categoryGroupId || ''}
-            onChange={handleCategoryGroupChange}
-          />
-        </View>
+        {/* Filters */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 8,
+            alignItems: 'center',
+          }}
+        >
+          {/* Category Group Filter */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'stretch',
+              borderRadius: 4,
+              overflow: 'hidden',
+              border: `1px solid ${theme.tableBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 10px',
+                backgroundColor: theme.tableRowBackgroundHover,
+                borderRight: `1px solid ${theme.tableBorder}`,
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 500, color: theme.pageTextSubdued }}>
+                {t('Group')}
+              </span>
+            </div>
+            <div style={{ backgroundColor: theme.tableBackground }}>
+              <Select
+                options={categoryGroupOptions}
+                value={categoryGroupId || ''}
+                onChange={handleCategoryGroupChange}
+                style={{
+                  border: 'none',
+                  borderRadius: 0,
+                  fontSize: 12,
+                }}
+              />
+            </div>
+          </div>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 14, fontWeight: 500 }}>{t('Category:')}</Text>
-          <Select
-            options={categoryOptions}
-            value={categoryId || ''}
-            onChange={handleCategoryChange}
-          />
-        </View>
-      </View>
+          {/* Category Filter */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'stretch',
+              borderRadius: 4,
+              overflow: 'hidden',
+              border: `1px solid ${theme.tableBorder}`,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 10px',
+                backgroundColor: theme.tableRowBackgroundHover,
+                borderRight: `1px solid ${theme.tableBorder}`,
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 500, color: theme.pageTextSubdued }}>
+                {t('Category')}
+              </span>
+            </div>
+            <div style={{ backgroundColor: theme.tableBackground }}>
+              <Select
+                options={categoryOptions}
+                value={categoryId || ''}
+                onChange={handleCategoryChange}
+                style={{
+                  border: 'none',
+                  borderRadius: 0,
+                  fontSize: 12,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {!data ? (
-        <View style={{ flex: 1, alignItems: 'center', padding: 40 }}>
-          <Text style={{ color: theme.pageTextSubdued }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+          <span style={{ color: theme.pageTextSubdued }}>
             {t('Loading insights...')}
-          </Text>
-        </View>
+          </span>
+        </div>
       ) : (
-        <View style={{ gap: 24 }}>
-          {/* Spending Alerts */}
-          {data.alerts && data.alerts.length > 0 && (
-            <InsightCard title={t('Spending Alerts')}>
-              <SpendingAlerts alerts={data.alerts} />
-            </InsightCard>
-          )}
-
-          {/* Summary Cards */}
-          <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'block' }}>
+          {/* Summary Cards - Responsive Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 12,
+              marginBottom: 20,
+            }}
+          >
             <SummaryCard
               title={t('This Month')}
               value={data.summary?.thisMonth || 0}
               subtitle={t('Total spending')}
+              icon="📊"
             />
             <SummaryCard
               title={t('Last Month')}
               value={data.summary?.lastMonth || 0}
               subtitle={t('Total spending')}
+              icon="📅"
             />
             <SummaryCard
               title={t('Monthly Average')}
               value={data.summary?.average || 0}
               subtitle={t('Over {{count}} months', { count: validMonths })}
+              icon="📈"
             />
             <SummaryCard
               title={t('Change')}
               value={data.summary?.change || 0}
               subtitle={t('vs last month')}
               isChange
+              icon="📉"
             />
-          </View>
+          </div>
+
+          {/* Spending Alerts */}
+          {data.alerts && data.alerts.length > 0 && (
+            <div style={{ display: 'block', marginBottom: 20 }}>
+              <SpendingAlerts alerts={data.alerts} />
+            </div>
+          )}
 
           {/* Month-over-Month Comparison */}
-          <InsightCard title={t('Monthly Spending Comparison')}>
-            <MoMComparisonChart data={data.monthlyData || []} />
-          </InsightCard>
+          <div style={{ display: 'block', marginBottom: 20 }}>
+            <InsightCard title={t('Monthly Spending Comparison')}>
+              <MoMComparisonChart data={data.monthlyData || []} />
+            </InsightCard>
+          </div>
 
-          {/* Two Column Layout */}
-          <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+          {/* Two Column Layout - Responsive Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 16,
+              paddingBottom: 20,
+            }}
+          >
             {/* Top Payees */}
-            <View style={{ flex: 1, minWidth: 300 }}>
-              <InsightCard title={t('Top Merchants')}>
-                <TopPayeesChart data={data.topPayees || []} />
-              </InsightCard>
-            </View>
+            <InsightCard title={t('Top Merchants')}>
+              <TopPayeesChart data={data.topPayees || []} />
+            </InsightCard>
 
             {/* Category Trends */}
-            <View style={{ flex: 1, minWidth: 300 }}>
-              <InsightCard title={t('Category Trends')}>
-                <CategoryTrendsChart
-                  data={data.categoryTrends || []}
-                  months={data.months || []}
-                />
-              </InsightCard>
-            </View>
-          </View>
-        </View>
+            <InsightCard title={t('Category Trends')}>
+              <CategoryTrendsChart
+                data={data.categoryTrends || []}
+                months={data.months || []}
+              />
+            </InsightCard>
+          </div>
+        </div>
       )}
     </Page>
   );
@@ -228,7 +377,7 @@ function InsightCard({
   children: React.ReactNode;
 }) {
   return (
-    <View
+    <div
       style={{
         backgroundColor: theme.tableBackground,
         borderRadius: 8,
@@ -236,20 +385,30 @@ function InsightCard({
         border: `1px solid ${theme.tableBorder}`,
       }}
     >
-      <Text
+      <div
         style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: theme.pageTextSubdued,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
           marginBottom: 16,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
+          paddingBottom: 12,
+          borderBottom: `1px solid ${theme.tableBorder}`,
         }}
       >
-        {title}
-      </Text>
+        <span
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: theme.pageText,
+            letterSpacing: 0.3,
+          }}
+        >
+          {title}
+        </span>
+      </div>
       {children}
-    </View>
+    </div>
   );
 }
 
@@ -258,54 +417,70 @@ function SummaryCard({
   value,
   subtitle,
   isChange = false,
+  icon,
 }: {
   title: string;
   value: number;
   subtitle: string;
   isChange?: boolean;
+  icon?: string;
 }) {
   return (
-    <View
+    <div
       style={{
-        flex: 1,
-        minWidth: 150,
         backgroundColor: theme.tableBackground,
         borderRadius: 8,
         padding: 16,
         border: `1px solid ${theme.tableBorder}`,
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <Text
+      <div
         style={{
-          fontSize: 12,
-          color: theme.pageTextSubdued,
-          marginBottom: 4,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 8,
         }}
       >
-        {title}
-      </Text>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: theme.pageTextSubdued,
+          }}
+        >
+          {title}
+        </span>
+        {icon && (
+          <span style={{ fontSize: 14, opacity: 0.7 }}>{icon}</span>
+        )}
+      </div>
       <CurrencyAmount
         value={isChange ? value : Math.abs(value)}
         showSign={isChange}
         colorize={isChange}
         amountStyle={{
-          fontSize: 24,
+          fontSize: 22,
           fontWeight: 700,
+          lineHeight: 1.2,
         }}
         symbolStyle={{
-          fontSize: 14,
+          fontSize: 13,
           opacity: 0.7,
         }}
       />
-      <Text
+      <span
         style={{
           fontSize: 11,
           color: theme.pageTextSubdued,
-          marginTop: 4,
+          marginTop: 6,
         }}
       >
         {subtitle}
-      </Text>
-    </View>
+      </span>
+    </div>
   );
 }

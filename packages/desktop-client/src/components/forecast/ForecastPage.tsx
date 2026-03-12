@@ -143,18 +143,15 @@ function SummaryCard({
   return (
     <View
       style={{
-        minWidth: 0,
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: compact ? 'center' : 'flex-start',
         justifyContent: 'flex-start',
-        padding: compact ? '10px 8px' : '12px 16px',
       }}
     >
       <Text
         style={{
-          fontSize: compact ? 10 : 11,
+          fontSize: compact ? 10 : 12,
           fontWeight: 500,
           color: theme.pageTextSubdued,
           marginBottom: compact ? 4 : 6,
@@ -164,7 +161,7 @@ function SummaryCard({
       </Text>
       <Text
         style={{
-          fontSize: compact ? 18 : 22,
+          fontSize: compact ? 16 : 22,
           fontWeight: 700,
           color: textColor,
           ...styles.monoText,
@@ -173,16 +170,17 @@ function SummaryCard({
       >
         {formattedValue}
       </Text>
-      <Text
-        style={{
-          fontSize: 10,
-          color: theme.pageTextSubdued,
-          marginTop: 4,
-          visibility: subtitle ? 'visible' : 'hidden',
-        }}
-      >
-        {subtitle || '\u00A0'}
-      </Text>
+      {subtitle && (
+        <Text
+          style={{
+            fontSize: 11,
+            color: theme.pageTextSubdued,
+            marginTop: 6,
+          }}
+        >
+          {subtitle}
+        </Text>
+      )}
     </View>
   );
 }
@@ -345,41 +343,47 @@ function TabBar({
   onTabChange: (id: string) => void;
 }) {
   return (
-    <View
+    <div
       style={{
         display: 'flex',
         flexDirection: 'row',
         gap: 0,
-        borderBottom: `1px solid ${theme.tableBorder}`,
+        borderBottom: `2px solid ${theme.tableBorder}`,
+        backgroundColor: theme.tableBackground,
+        borderRadius: '6px 6px 0 0',
+        padding: '0 4px',
       }}
     >
       {tabs.map(tab => {
         const isActive = tab.id === activeTab;
         return (
-          <View
+          <div
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             style={{
-              padding: '12px 20px',
+              padding: '14px 24px',
               cursor: 'pointer',
-              borderBottom: isActive ? `2px solid ${theme.pageTextLink}` : '2px solid transparent',
-              marginBottom: -1,
+              borderBottom: isActive ? `3px solid ${theme.pageTextLink}` : '3px solid transparent',
+              marginBottom: -2,
               transition: 'all 0.15s ease',
+              backgroundColor: isActive ? theme.pageBackground : 'transparent',
+              borderRadius: '6px 6px 0 0',
             }}
           >
-            <Text
+            <span
               style={{
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: isActive ? 600 : 400,
                 color: isActive ? theme.pageText : theme.pageTextSubdued,
+                whiteSpace: 'nowrap',
               }}
             >
               {tab.label}
-            </Text>
-          </View>
+            </span>
+          </div>
         );
       })}
-    </View>
+    </div>
   );
 }
 
@@ -394,9 +398,7 @@ export function ForecastPage() {
   const [savedDays, setSavedDays] = useLocalPref('forecast.forecastDays');
 
   // Config state
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(() => {
-    return accounts.filter(a => !a.closed && !a.offbudget).map(a => a.id);
-  });
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<ForecastTab>('overview');
@@ -419,7 +421,7 @@ export function ForecastPage() {
         accounts.filter(a => !a.closed && !a.offbudget).map(a => a.id),
       );
     }
-  }, [accounts, selectedAccountIds.length]);
+  }, [accounts]);
 
   const getForecastData = useMemo(
     () =>
@@ -476,31 +478,33 @@ export function ForecastPage() {
   return (
     <Page header={<PageHeader title={t('Financial Forecast')} />}>
       {/* Configuration Bar */}
-      <View
+      <div
         style={{
           display: 'flex',
           flexDirection: isNarrowWidth ? 'column' : 'row',
           alignItems: isNarrowWidth ? 'stretch' : 'center',
-          gap: isNarrowWidth ? 12 : 20,
+          justifyContent: 'space-between',
+          gap: 12,
           padding: '12px 0',
-          marginTop: 8,
-          marginBottom: 16,
+          marginBottom: 12,
         }}
       >
-        {/* Accounts Dropdown-style */}
-        <View
+        {/* Accounts */}
+        <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
             flexWrap: 'wrap',
+            flex: '1 1 auto',
+            minWidth: 0,
           }}
         >
-          <Text style={{ fontSize: 12, color: theme.pageTextSubdued, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: 12, color: theme.pageTextSubdued, flexShrink: 0 }}>
             {t('Accounts:')}
-          </Text>
-          <View style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {accounts.filter(a => !a.closed && !a.offbudget).map(account => (
               <AccountChip
                 key={account.id}
@@ -515,19 +519,16 @@ export function ForecastPage() {
                 }}
               />
             ))}
-          </View>
-        </View>
+          </div>
+        </div>
 
-        {/* Spacer */}
-        {!isNarrowWidth && <View style={{ flex: 1 }} />}
-
-        {/* Settings */}
-        <View
+        {/* Settings - responsive wrap */}
+        <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             flexWrap: 'wrap',
-            gap: 12,
+            gap: 8,
             alignItems: 'center',
           }}
         >
@@ -541,24 +542,53 @@ export function ForecastPage() {
             onChange={handleDaysChange}
           />
 
-          <View
+          <div
             style={{
               display: 'flex',
               flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
+              alignItems: 'stretch',
+              borderRadius: 4,
+              overflow: 'hidden',
+              border: `1px solid ${theme.tableBorder}`,
             }}
+            title={t('You will be warned when your projected balance falls below this amount.')}
           >
-            <Text style={{ fontSize: 12, color: theme.pageTextSubdued }}>
-              {t('Alert below')}
-            </Text>
-            <View
+            <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '0 10px',
+                backgroundColor: theme.tableRowBackgroundHover,
+                borderRight: `1px solid ${theme.tableBorder}`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 11,
+                  color: theme.warningText,
+                }}
+              >
+                ⚠
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: theme.pageTextSubdued,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t('Alert below')}
+              </span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
                 backgroundColor: theme.tableBackground,
-                borderRadius: 4,
-                border: `1px solid ${theme.tableBorder}`,
-                padding: '0 8px',
-                minWidth: 80,
+                padding: '5px 10px',
+                minWidth: 100,
               }}
             >
               <AmountInput
@@ -568,17 +598,32 @@ export function ForecastPage() {
                 inputStyle={{
                   border: 'none',
                   backgroundColor: 'transparent',
-                  padding: '4px 0',
+                  padding: 0,
                   fontSize: 12,
+                  fontWeight: 500,
+                  width: '100%',
                 }}
               />
-            </View>
-          </View>
-        </View>
-      </View>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Tabs */}
-      <View style={{ marginBottom: 20 }}>
+      {/* Sticky Navigation Tabs */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backgroundColor: theme.pageBackground,
+          marginLeft: -20,
+          marginRight: -20,
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingBottom: 16,
+          marginBottom: 8,
+        }}
+      >
         <TabBar
           tabs={[
             { id: 'overview', label: t('Overview') },
@@ -589,7 +634,7 @@ export function ForecastPage() {
           activeTab={activeTab}
           onTabChange={(id) => setActiveTab(id as ForecastTab)}
         />
-      </View>
+      </div>
 
       {/* Content */}
       {!data ? (
@@ -604,38 +649,37 @@ export function ForecastPage() {
         <>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <View style={{ gap: 16 }}>
-              {/* Summary Row */}
-              <View
+            <div style={{ display: 'block' }}>
+              {/* KPI Cards Row */}
+              <div
                 style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                   gap: 12,
+                  marginBottom: data.alerts.length > 0 ? 20 : 0,
                 }}
               >
-                <View
+                <div
                   style={{
-                    flex: '1 1 200px',
-                    minWidth: 180,
                     backgroundColor: theme.tableBackground,
                     borderRadius: 8,
                     border: `1px solid ${theme.tableBorder}`,
+                    padding: 16,
                   }}
                 >
                   <SummaryCard
                     title={t('Current Balance')}
                     value={data.startingBalance}
                     subtitle={t('Today')}
+                    compact={isNarrowWidth}
                   />
-                </View>
-                <View
+                </div>
+                <div
                   style={{
-                    flex: '1 1 200px',
-                    minWidth: 180,
                     backgroundColor: theme.tableBackground,
                     borderRadius: 8,
                     border: `1px solid ${theme.tableBorder}`,
+                    padding: 16,
                   }}
                 >
                   <SummaryCard
@@ -644,60 +688,63 @@ export function ForecastPage() {
                     isPositive={data.endingBalance > data.startingBalance}
                     isNegative={data.endingBalance < data.startingBalance}
                     subtitle={t('In {{days}} days', { days: forecastDays })}
+                    compact={isNarrowWidth}
                   />
-                </View>
-                <View
+                </div>
+                <div
                   style={{
-                    flex: '1 1 200px',
-                    minWidth: 180,
                     backgroundColor: theme.tableBackground,
                     borderRadius: 8,
                     border: `1px solid ${theme.tableBorder}`,
+                    padding: 16,
                   }}
                 >
                   <SummaryCard
                     title={t('Income')}
                     value={data.totalIncome}
                     isPositive
+                    compact={isNarrowWidth}
                   />
-                </View>
-                <View
+                </div>
+                <div
                   style={{
-                    flex: '1 1 200px',
-                    minWidth: 180,
                     backgroundColor: theme.tableBackground,
                     borderRadius: 8,
                     border: `1px solid ${theme.tableBorder}`,
+                    padding: 16,
                   }}
                 >
                   <SummaryCard
                     title={t('Expenses')}
                     value={data.totalExpenses}
                     isNegative
+                    compact={isNarrowWidth}
                   />
-                </View>
-              </View>
+                </div>
+              </div>
+
+              {/* Alerts Section - always below KPI cards */}
+              {data.alerts.length > 0 && (
+                <div style={{ display: 'block' }}>
+                  <ForecastAlerts alerts={data.alerts} />
+                </div>
+              )}
 
               {/* Per-Currency Breakdown (if multiple currencies) */}
               {hasMultipleCurrencies && (
-                <InsightCard title={t('Currency Breakdown')}>
-                  <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-                    {data.currencySummaries.map(summary => (
-                      <CurrencySummaryCard key={summary.currency} summary={summary} format={format} />
-                    ))}
-                  </View>
-                </InsightCard>
-              )}
-
-              {/* Alerts - shown inline without card wrapper */}
-              {data.alerts.length > 0 && (
-                <View style={{ marginTop: 16 }}>
-                  <ForecastAlerts alerts={data.alerts} />
-                </View>
+                <div style={{ display: 'block', marginTop: 24 }}>
+                  <InsightCard title={t('Currency Breakdown')}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                      {data.currencySummaries.map(summary => (
+                        <CurrencySummaryCard key={summary.currency} summary={summary} format={format} />
+                      ))}
+                    </div>
+                  </InsightCard>
+                </div>
               )}
 
               {/* Balance Projection Chart */}
-              <View style={{ marginTop: 8 }}>
+              <div style={{ display: 'block', marginTop: 24 }}>
                 <InsightCard title={t('Balance Projection ({{currency}})', { currency: baseCurrency })}>
                   <ForecastChart
                     data={data.dailyBalances}
@@ -705,26 +752,30 @@ export function ForecastPage() {
                     baseCurrency={baseCurrency}
                   />
                 </InsightCard>
-              </View>
+              </div>
 
               {/* Income vs Expense Chart */}
-              <InsightCard title={t('Income vs Expenses')}>
-                <IncomeExpenseChart data={data.dailyBalances} groupBy="week" />
-              </InsightCard>
+              <div style={{ display: 'block', marginTop: 24 }}>
+                <InsightCard title={t('Income vs Expenses')}>
+                  <IncomeExpenseChart data={data.dailyBalances} groupBy="week" />
+                </InsightCard>
+              </div>
 
               {/* Cash Flow Table */}
-              <InsightCard title={t('Upcoming Cash Flow')} noPadding>
-                <CashFlowTable
-                  data={data.dailyBalances}
-                  maxHeight={400}
-                />
-              </InsightCard>
-            </View>
+              <div style={{ display: 'block', marginTop: 24, paddingBottom: 20 }}>
+                <InsightCard title={t('Upcoming Cash Flow')} noPadding>
+                  <CashFlowTable
+                    data={data.dailyBalances}
+                    maxHeight={400}
+                  />
+                </InsightCard>
+              </div>
+            </div>
           )}
 
           {/* Budget vs Forecast Tab */}
           {activeTab === 'budget' && (
-            <View style={{ gap: 16 }}>
+            <View style={{ gap: 16, paddingBottom: 20 }}>
               <InsightCard title={t('Budget vs Forecast Comparison')}>
                 {data.categoryBreakdown && data.categoryBreakdown.length > 0 ? (
                   <BudgetComparison data={data.categoryBreakdown} />
@@ -751,7 +802,7 @@ export function ForecastPage() {
 
           {/* Patterns Tab */}
           {activeTab === 'patterns' && (
-            <View style={{ gap: 16 }}>
+            <View style={{ gap: 16, paddingBottom: 20 }}>
               <View
                 style={{
                   display: 'flex',
@@ -800,7 +851,7 @@ export function ForecastPage() {
 
           {/* What-If Tab */}
           {activeTab === 'whatif' && (
-            <View style={{ gap: 16 }}>
+            <View style={{ gap: 16, paddingBottom: 20 }}>
 
               <WhatIfPanel
                 scenario={scenario}

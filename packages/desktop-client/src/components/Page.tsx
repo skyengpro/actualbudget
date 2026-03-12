@@ -146,7 +146,7 @@ export function Page({ header, style, padding, children, footer }: PageProps) {
         role="main"
         style={{
           flex: 1,
-          overflowY: isNarrowWidth ? 'auto' : undefined,
+          overflow: 'auto',
           padding: `0 ${childrenPadding}px`,
         }}
       >

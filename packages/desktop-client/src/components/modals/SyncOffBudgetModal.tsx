@@ -2,12 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
-import { FormError } from '@actual-app/components/form-error';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
-import { Label } from '@actual-app/components/label';
 import { Select } from '@actual-app/components/select';
 import { styles } from '@actual-app/components/styles';
-import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,7 +20,6 @@ import { usePayees } from '@desktop-client/hooks/usePayees';
 
 import {
   Modal,
-  ModalButtons,
   ModalCloseButton,
   ModalHeader,
   ModalTitle,
@@ -215,170 +211,324 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
             rightContent={<ModalCloseButton onPress={close} />}
           />
           <View style={{
-            width: isNarrowWidth ? '100%' : 600,
+            width: isNarrowWidth ? '100%' : 650,
             maxWidth: '100%',
             maxHeight: '70vh',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
           }}>
-            {/* Account Selection */}
-            <View style={{ paddingBottom: 16, gap: 12 }}>
-              <View style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <Label
-                  title={t('From (Off-Budget)')}
-                  style={{ ...(isNarrowWidth && styles.mediumText) }}
-                />
-                <Select
-                  value={selectedOffBudgetId}
-                  onChange={(v: string) => setSelectedOffBudgetId(v)}
-                  options={[
-                    ['', t('Select off-budget account...')],
-                    ...offBudgetAccounts.map(a => [a.id, a.name] as const),
-                  ]}
+            {/* Account Selection - Horizontal Layout */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: isNarrowWidth ? 'column' : 'row',
+                gap: 12,
+                paddingBottom: 16,
+                marginBottom: 16,
+                borderBottom: `1px solid ${theme.tableBorder}`,
+              }}
+            >
+              {/* From Account */}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'stretch',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  border: `1px solid ${theme.tableBorder}`,
+                }}
+              >
+                <div
                   style={{
-                    width: '100%',
-                    ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 12px',
+                    backgroundColor: theme.tableRowBackgroundHover,
+                    borderRight: `1px solid ${theme.tableBorder}`,
                   }}
-                />
-              </View>
+                >
+                  <span style={{ fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, whiteSpace: 'nowrap' }}>
+                    {t('FROM')}
+                  </span>
+                </div>
+                <div style={{ flex: 1, backgroundColor: theme.tableBackground }}>
+                  <Select
+                    value={selectedOffBudgetId}
+                    onChange={(v: string) => setSelectedOffBudgetId(v)}
+                    options={[
+                      ['', t('Select off-budget account...')],
+                      ...offBudgetAccounts.map(a => [a.id, a.name] as const),
+                    ]}
+                    style={{
+                      width: '100%',
+                      border: 'none',
+                      borderRadius: 0,
+                      ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                    }}
+                  />
+                </div>
+              </div>
 
-              <View style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <Label
-                  title={t('To (On-Budget)')}
-                  style={{ ...(isNarrowWidth && styles.mediumText) }}
-                />
-                <Select
-                  value={selectedOnBudgetId}
-                  onChange={(v: string) => setSelectedOnBudgetId(v)}
-                  options={[
-                    ['', t('Select on-budget account...')],
-                    ...onBudgetAccounts.map(a => [a.id, a.name] as const),
-                  ]}
+              {/* Arrow */}
+              {!isNarrowWidth && (
+                <div style={{ display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+                  <span style={{ fontSize: 16, color: theme.pageTextSubdued }}>→</span>
+                </div>
+              )}
+
+              {/* To Account */}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'stretch',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  border: `1px solid ${theme.tableBorder}`,
+                }}
+              >
+                <div
                   style={{
-                    width: '100%',
-                    ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 12px',
+                    backgroundColor: theme.tableRowBackgroundHover,
+                    borderRight: `1px solid ${theme.tableBorder}`,
                   }}
-                />
-              </View>
-            </View>
+                >
+                  <span style={{ fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, whiteSpace: 'nowrap' }}>
+                    {t('TO')}
+                  </span>
+                </div>
+                <div style={{ flex: 1, backgroundColor: theme.tableBackground }}>
+                  <Select
+                    value={selectedOnBudgetId}
+                    onChange={(v: string) => setSelectedOnBudgetId(v)}
+                    options={[
+                      ['', t('Select on-budget account...')],
+                      ...onBudgetAccounts.map(a => [a.id, a.name] as const),
+                    ]}
+                    style={{
+                      width: '100%',
+                      border: 'none',
+                      borderRadius: 0,
+                      ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
 
             {/* Transactions List */}
             {selectedOffBudgetId && (
-              <View style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <View
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {/* Header Row */}
+                <div
                   style={{
+                    display: 'flex',
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 8,
+                    marginBottom: 12,
                   }}
                 >
-                  <Text style={{ fontWeight: 600 }}>
-                    <Trans>Select transactions to sync:</Trans>
-                  </Text>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: theme.pageText }}>
+                      {t('Transactions')}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        backgroundColor: theme.pageTextPositive + '20',
+                        color: theme.pageTextPositive,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {transactions.length}
+                    </span>
+                  </div>
                   <Button variant="bare" onPress={toggleAll}>
                     {transactions.every(t => t.selected) ? t('Deselect All') : t('Select All')}
                   </Button>
-                </View>
+                </div>
 
                 {isLoading ? (
-                  <View style={{ padding: 20, textAlign: 'center' }}>
-                    <Trans>Loading transactions...</Trans>
-                  </View>
+                  <div style={{ padding: 30, textAlign: 'center', color: theme.pageTextSubdued }}>
+                    {t('Loading transactions...')}
+                  </div>
                 ) : transactions.length === 0 ? (
-                  <View style={{ padding: 20, textAlign: 'center', color: theme.pageTextSubdued }}>
-                    <Trans>No transactions in this account</Trans>
-                  </View>
+                  <div
+                    style={{
+                      padding: 30,
+                      textAlign: 'center',
+                      color: theme.pageTextSubdued,
+                      backgroundColor: theme.tableBackground,
+                      borderRadius: 6,
+                      border: `1px dashed ${theme.tableBorder}`,
+                    }}
+                  >
+                    {t('No transactions in this account')}
+                  </div>
                 ) : (
-                  <View
+                  <div
                     style={{
                       flex: 1,
                       overflow: 'auto',
                       border: `1px solid ${theme.tableBorder}`,
-                      borderRadius: 4,
+                      borderRadius: 6,
                     }}
                   >
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ backgroundColor: theme.tableHeaderBackground }}>
-                          <th style={{ padding: 8, width: 40 }}></th>
-                          <th style={{ padding: 8, textAlign: 'left' }}>{t('Date')}</th>
-                          <th style={{ padding: 8, textAlign: 'left' }}>{t('Payee')}</th>
-                          <th style={{ padding: 8, textAlign: 'right' }}>{t('Amount')}</th>
-                          <th style={{ padding: 8, textAlign: 'left', minWidth: 180 }}>{t('Category')}</th>
+                          <th style={{ padding: '10px 8px', width: 36 }}></th>
+                          <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {t('Date')}
+                          </th>
+                          <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {t('Description')}
+                          </th>
+                          <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {t('Amount')}
+                          </th>
+                          <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: theme.pageTextSubdued, textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: 160 }}>
+                            {t('Category')}
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {transactions.map(txn => (
+                        {transactions.map((txn, index) => (
                           <tr
                             key={txn.id}
+                            onClick={() => toggleTransaction(txn.id)}
                             style={{
-                              borderBottom: `1px solid ${theme.tableBorder}`,
+                              borderBottom: index < transactions.length - 1 ? `1px solid ${theme.tableBorder}` : 'none',
                               backgroundColor: txn.selected ? theme.tableRowBackgroundHover : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background-color 0.1s ease',
                             }}
                           >
-                            <td style={{ padding: 8, textAlign: 'center' }}>
+                            <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                               <input
                                 type="checkbox"
                                 checked={txn.selected}
-                                onChange={() => toggleTransaction(txn.id)}
+                                onChange={() => {}}
+                                style={{ cursor: 'pointer', width: 16, height: 16 }}
                               />
                             </td>
-                            <td style={{ padding: 8 }}>
+                            <td style={{ padding: '10px 8px', fontSize: 12, color: theme.pageTextSubdued }}>
                               {txn.date}
                             </td>
-                            <td style={{ padding: 8 }}>
-                              {txn.notes || '-'}
+                            <td style={{ padding: '10px 8px', fontSize: 13 }}>
+                              {txn.notes || <span style={{ color: theme.pageTextSubdued }}>—</span>}
                             </td>
-                            <td style={{ padding: 8, textAlign: 'right' }}>
+                            <td
+                              style={{
+                                padding: '10px 8px',
+                                textAlign: 'right',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                fontFamily: 'monospace',
+                                color: (txn.amount || 0) < 0 ? theme.errorText : theme.pageTextPositive,
+                              }}
+                            >
                               {format(txn.amount || 0, 'financial')}
                             </td>
-                            <td style={{ padding: 8 }} onClick={e => e.stopPropagation()}>
+                            <td style={{ padding: '10px 8px' }} onClick={e => e.stopPropagation()}>
                               {txn.selected ? (
                                 <CategoryAutocomplete
                                   value={txn.assignedCategory}
                                   onSelect={(catId) => updateCategory(txn.id, catId)}
                                 />
                               ) : (
-                                <Text style={{ color: theme.pageTextSubdued, fontStyle: 'italic' }}>
+                                <span style={{ color: theme.pageTextSubdued, fontSize: 12, fontStyle: 'italic' }}>
                                   {getCategoryName(txn.assignedCategory)}
-                                </Text>
+                                </span>
                               )}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </View>
+                  </div>
                 )}
 
-                {/* Summary */}
+                {/* Summary Footer */}
                 {selectedTransactions.length > 0 && (
-                  <View
+                  <div
                     style={{
                       marginTop: 12,
-                      padding: 12,
-                      backgroundColor: theme.tableRowBackgroundHover,
-                      borderRadius: 4,
+                      padding: '12px 16px',
+                      backgroundColor: theme.tableBackground,
+                      borderRadius: 6,
+                      border: `1px solid ${theme.tableBorder}`,
+                      display: 'flex',
                       flexDirection: 'row',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}
                   >
-                    <Text>
-                      <Trans>Selected: {{ count: selectedTransactions.length }} transactions</Trans>
-                    </Text>
-                    <Text style={{ fontWeight: 600 }}>
-                      <Trans>Total: {{ amount: format(totalAmount, 'financial') }}</Trans>
-                    </Text>
-                  </View>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 12, color: theme.pageTextSubdued }}>{t('Selected:')}</span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: theme.pageText,
+                        }}
+                      >
+                        {selectedTransactions.length} {t('transactions')}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 12, color: theme.pageTextSubdued }}>{t('Total:')}</span>
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          fontFamily: 'monospace',
+                          color: totalAmount < 0 ? theme.errorText : theme.pageTextPositive,
+                        }}
+                      >
+                        {format(totalAmount, 'financial')}
+                      </span>
+                    </div>
+                  </div>
                 )}
-              </View>
+              </div>
             )}
 
-            {error && <FormError style={{ marginTop: 10 }}>{error}</FormError>}
+            {error && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: '10px 14px',
+                  backgroundColor: theme.errorText + '15',
+                  borderRadius: 6,
+                  border: `1px solid ${theme.errorText}40`,
+                }}
+              >
+                <span style={{ fontSize: 12, color: theme.errorText }}>⚠ {error}</span>
+              </div>
+            )}
 
-            <ModalButtons style={{ marginTop: 16 }}>
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: `1px solid ${theme.tableBorder}`,
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+                gap: 10,
+              }}
+            >
               <Button
                 onPress={close}
                 style={{
@@ -392,13 +542,19 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
                 onPress={onSync}
                 isDisabled={isSyncing || selectedTransactions.length === 0}
                 style={{
-                  marginLeft: 10,
                   ...(isNarrowWidth && { height: styles.mobileMinHeight, flex: 1 }),
                 }}
               >
-                {isSyncing ? <Trans>Syncing...</Trans> : <Trans>Sync Transactions</Trans>}
+                {isSyncing ? (
+                  <Trans>Syncing...</Trans>
+                ) : (
+                  <>
+                    <span style={{ marginRight: 6 }}>↗</span>
+                    <Trans>Sync Transactions</Trans>
+                  </>
+                )}
               </Button>
-            </ModalButtons>
+            </div>
           </View>
         </>
       )}
