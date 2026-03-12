@@ -186,6 +186,7 @@ async function checkIfScheduleExists(name, scheduleId) {
 export async function createSchedule({
   schedule = null,
   conditions = [],
+  actions = [],
 } = {}): Promise<ScheduleEntity['id']> {
   const scheduleId = schedule?.id || uuidv4();
 
@@ -210,11 +211,17 @@ export async function createSchedule({
   }
 
   // Create the rule here based on the info
+  // Merge user-provided actions with the required link-schedule action
+  const ruleActions = [
+    { op: 'link-schedule', value: scheduleId },
+    ...actions,
+  ];
+
   const ruleId = await insertRule({
     stage: null,
     conditionsOp: 'and',
     conditions,
-    actions: [{ op: 'link-schedule', value: scheduleId }],
+    actions: ruleActions,
   });
 
   const now = Date.now();
@@ -240,10 +247,12 @@ export async function createSchedule({
 export async function updateSchedule({
   schedule,
   conditions,
+  actions,
   resetNextDate,
 }: {
   schedule;
   conditions?;
+  actions?;
   resetNextDate?: boolean;
 }) {
   if (schedule.rule) {
@@ -253,9 +262,9 @@ export async function updateSchedule({
 
   // This must be outside the `batchMessages` call because we change
   // and then read data
-  if (conditions) {
-    const { date: dateCond } = extractScheduleConds(conditions);
-    if (dateCond && dateCond.value == null) {
+  if (conditions || actions) {
+    const { date: dateCond } = extractScheduleConds(conditions || []);
+    if (conditions && dateCond && dateCond.value == null) {
       throw new Error('Date is required');
     }
 
@@ -273,11 +282,24 @@ export async function updateSchedule({
   }
 
   await batchMessages(async () => {
-    if (conditions) {
-      const oldConditions = rule.serialize().conditions;
-      const newConditions = updateConditions(oldConditions, conditions);
+    if (conditions || actions) {
+      const serialized = rule.serialize();
+      const oldConditions = serialized.conditions;
+      const newConditions = conditions
+        ? updateConditions(oldConditions, conditions)
+        : oldConditions;
 
-      await updateRule({ id: rule.id, conditions: newConditions });
+      // Update actions: keep link-schedule, replace other actions
+      let newActions = serialized.actions;
+      if (actions !== undefined) {
+        // Keep link-schedule action, replace all others with provided actions
+        const linkAction = serialized.actions.find(
+          (a: { op: string }) => a.op === 'link-schedule',
+        );
+        newActions = linkAction ? [linkAction, ...actions] : actions;
+      }
+
+      await updateRule({ id: rule.id, conditions: newConditions, actions: newActions });
 
       // Annoyingly, sometimes it has `type` and sometimes it doesn't
       const stripType = ({ type: _type, ...fields }) => fields;

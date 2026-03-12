@@ -3,8 +3,10 @@ import { Trans, useTranslation } from 'react-i18next';
 
 import { Button } from '@actual-app/components/button';
 import { FormError } from '@actual-app/components/form-error';
-import { InlineField } from '@actual-app/components/inline-field';
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
+import { Label } from '@actual-app/components/label';
 import { Select } from '@actual-app/components/select';
+import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -57,6 +59,7 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const { isNarrowWidth } = useResponsive();
 
   // Get off-budget accounts
   const offBudgetAccounts = useMemo(() => {
@@ -211,10 +214,21 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
             title={<ModalTitle title={t('Sync Off-Budget Transactions')} shrinkOnOverflow />}
             rightContent={<ModalCloseButton onPress={close} />}
           />
-          <View style={{ minWidth: 600, maxHeight: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <View style={{
+            width: isNarrowWidth ? '100%' : 600,
+            maxWidth: '100%',
+            maxHeight: '70vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
             {/* Account Selection */}
-            <View style={{ padding: '0 0 16px 0' }}>
-              <InlineField label={t('From (Off-Budget)')} width="100%">
+            <View style={{ paddingBottom: 16, gap: 12 }}>
+              <View style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Label
+                  title={t('From (Off-Budget)')}
+                  style={{ ...(isNarrowWidth && styles.mediumText) }}
+                />
                 <Select
                   value={selectedOffBudgetId}
                   onChange={(v: string) => setSelectedOffBudgetId(v)}
@@ -222,11 +236,18 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
                     ['', t('Select off-budget account...')],
                     ...offBudgetAccounts.map(a => [a.id, a.name] as const),
                   ]}
-                  style={{ flex: 1 }}
+                  style={{
+                    width: '100%',
+                    ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                  }}
                 />
-              </InlineField>
+              </View>
 
-              <InlineField label={t('To (On-Budget)')} width="100%">
+              <View style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Label
+                  title={t('To (On-Budget)')}
+                  style={{ ...(isNarrowWidth && styles.mediumText) }}
+                />
                 <Select
                   value={selectedOnBudgetId}
                   onChange={(v: string) => setSelectedOnBudgetId(v)}
@@ -234,9 +255,12 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
                     ['', t('Select on-budget account...')],
                     ...onBudgetAccounts.map(a => [a.id, a.name] as const),
                   ]}
-                  style={{ flex: 1 }}
+                  style={{
+                    width: '100%',
+                    ...(isNarrowWidth && { height: styles.mobileMinHeight }),
+                  }}
                 />
-              </InlineField>
+              </View>
             </View>
 
             {/* Transactions List */}
@@ -355,14 +379,22 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
             {error && <FormError style={{ marginTop: 10 }}>{error}</FormError>}
 
             <ModalButtons style={{ marginTop: 16 }}>
-              <Button onPress={close}>
+              <Button
+                onPress={close}
+                style={{
+                  ...(isNarrowWidth && { height: styles.mobileMinHeight, flex: 1 }),
+                }}
+              >
                 <Trans>Cancel</Trans>
               </Button>
               <Button
                 variant="primary"
                 onPress={onSync}
                 isDisabled={isSyncing || selectedTransactions.length === 0}
-                style={{ marginLeft: 10 }}
+                style={{
+                  marginLeft: 10,
+                  ...(isNarrowWidth && { height: styles.mobileMinHeight, flex: 1 }),
+                }}
               >
                 {isSyncing ? <Trans>Syncing...</Trans> : <Trans>Sync Transactions</Trans>}
               </Button>

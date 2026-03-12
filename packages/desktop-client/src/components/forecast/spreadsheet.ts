@@ -6,6 +6,9 @@ export function createForecastSpreadsheet({
   forecastDays,
   lowBalanceThreshold,
   baseCurrency,
+  includePatterns,
+  patternConfidenceThreshold,
+  scenario,
 }: ForecastConfig) {
   return async (
     _spreadsheet: unknown,
@@ -17,6 +20,9 @@ export function createForecastSpreadsheet({
         forecastDays,
         lowBalanceThreshold,
         baseCurrency,
+        includePatterns,
+        patternConfidenceThreshold,
+        scenario,
       },
     });
 

@@ -27,13 +27,12 @@ export function ForecastAlerts({ alerts }: ForecastAlertsProps) {
     <View style={{ gap: 8 }}>
       {alerts.map((alert, index) => {
         const isNegative = alert.type === 'negative_balance';
-        const bgColor = isNegative
-          ? theme.errorBackground
-          : theme.warningBackground;
-        const borderColor = isNegative
-          ? theme.errorBorder
-          : theme.warningBorder;
-        const iconColor = isNegative ? theme.errorText : theme.warningText;
+        const isOverBudget = alert.type === 'over_budget';
+        const accentColor = isNegative
+          ? theme.errorText
+          : isOverBudget
+            ? theme.errorText
+            : theme.warningText;
 
         return (
           <View
@@ -42,50 +41,41 @@ export function ForecastAlerts({ alerts }: ForecastAlertsProps) {
               flexDirection: 'row',
               alignItems: 'center',
               gap: 12,
-              padding: 12,
-              backgroundColor: bgColor,
+              padding: '10px 14px',
+              backgroundColor: theme.tableRowBackgroundHover,
               borderRadius: 6,
-              border: `1px solid ${borderColor}`,
+              borderLeft: `3px solid ${accentColor}`,
             }}
           >
             <SvgAlertTriangle
               style={{
-                width: 20,
-                height: 20,
-                color: iconColor,
+                width: 16,
+                height: 16,
+                color: accentColor,
                 flexShrink: 0,
               }}
             />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: 500, color: theme.pageText }}>
+              <Text style={{ fontSize: 13, fontWeight: 500, color: theme.pageText }}>
                 {isNegative
                   ? t('Negative Balance Warning')
-                  : t('Low Balance Alert')}
-                {alert.currency && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 400,
-                      marginLeft: 8,
-                      color: theme.pageTextSubdued,
-                    }}
-                  >
-                    ({alert.currency})
-                  </Text>
-                )}
+                  : isOverBudget
+                    ? t('Over Budget')
+                    : t('Low Balance Alert')}
               </Text>
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: 12,
                   color: theme.pageTextSubdued,
                   marginTop: 2,
                 }}
               >
-                {t('Balance drops to {{amount}} {{currency}} on {{date}}', {
-                  amount: format(alert.balance, 'financial'),
-                  currency: alert.currency || '',
-                  date: monthUtils.format(alert.date, 'MMM d, yyyy'),
-                })}
+                {isOverBudget
+                  ? alert.message
+                  : t('{{amount}} on {{date}}', {
+                      amount: format(alert.balance, 'financial'),
+                      date: monthUtils.format(alert.date, 'MMM d'),
+                    })}
               </Text>
             </View>
           </View>

@@ -36,7 +36,7 @@ type ScheduleEditAction =
     }
   | {
       type: 'set-field';
-      field: 'name' | 'account' | 'payee';
+      field: 'name' | 'account' | 'payee' | 'category';
       value: string;
     }
   | {
@@ -90,12 +90,25 @@ function createScheduleEditReducer(useGetScheduledAmount: boolean = false) {
       case 'set-schedule': {
         const schedule = action.schedule;
 
-        // See if there are custom rules
+        // Extract category from actions if it exists
+        const actions = schedule._actions as
+          | Array<{ op: unknown; field?: string; value?: string }>
+          | undefined;
+        const categoryAction = actions?.find(
+          a => a.op === 'set' && a.field === 'category',
+        );
+        const category = categoryAction?.value ?? null;
+
+        // See if there are custom rules (excluding category set action)
         const conds = extractScheduleConds(schedule._conditions);
         const condsSet = new Set(Object.values(conds));
         const isCustom = !!(
           schedule._conditions?.find(c => !condsSet.has(c)) ||
-          schedule._actions?.find(a => a.op !== 'link-schedule')
+          actions?.find(
+            a =>
+              a.op !== 'link-schedule' &&
+              !(a.op === 'set' && a.field === 'category'),
+          )
         );
 
         return {
@@ -105,6 +118,7 @@ function createScheduleEditReducer(useGetScheduledAmount: boolean = false) {
           fields: {
             payee: schedule._payee ?? null,
             account: schedule._account ?? null,
+            category,
             amount: schedule._amount || 0,
             amountOp: schedule._amountOp || 'isapprox',
             date: schedule._date ?? null,
@@ -249,6 +263,7 @@ export function useScheduleEdit({
     fields: {
       payee: null,
       account: null,
+      category: null,
       amount: null,
       amountOp: null,
       date: null,

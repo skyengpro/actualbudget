@@ -130,7 +130,7 @@ export function ScheduleEditModal({
       }
     }
 
-    const { error, conditions } = updateScheduleConditions(
+    const { error, conditions, actions } = updateScheduleConditions(
       state.schedule,
       state.fields,
     );
@@ -149,6 +149,7 @@ export function ScheduleEditModal({
           name: state.fields.name,
         },
         conditions,
+        actions,
       },
     );
 

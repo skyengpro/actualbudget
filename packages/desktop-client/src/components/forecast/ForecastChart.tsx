@@ -115,10 +115,15 @@ export function ForecastChart({
 
   // Use totalBalance (converted to base currency)
   const balances = data.map(d => d.totalBalance || 0);
-  const minBalance = Math.min(...balances, lowBalanceThreshold);
+  const minBalance = Math.min(...balances);
   const maxBalance = Math.max(...balances);
-  const padding = (maxBalance - minBalance) * 0.1 || 10000;
-  const yMin = Math.floor((minBalance - padding) / 10000) * 10000;
+
+  // Only include threshold in range if it's within a reasonable range of balances
+  const thresholdIsRelevant = lowBalanceThreshold >= minBalance * 0.5 && lowBalanceThreshold <= maxBalance * 1.5;
+  const effectiveMin = thresholdIsRelevant ? Math.min(minBalance, lowBalanceThreshold) : minBalance;
+
+  const padding = (maxBalance - effectiveMin) * 0.1 || 10000;
+  const yMin = Math.floor((effectiveMin - padding) / 10000) * 10000;
   const yMax = Math.ceil((maxBalance + padding) / 10000) * 10000;
 
   // Format data for chart
@@ -169,23 +174,27 @@ export function ForecastChart({
             width={70}
           />
           <Tooltip content={<CustomTooltip baseCurrency={baseCurrency} format={format} />} />
-          <ReferenceLine
-            y={lowBalanceThreshold}
-            stroke={theme.warningText}
-            strokeDasharray="5 5"
-            label={{
-              value: t('Threshold'),
-              position: 'right',
-              fill: theme.warningText,
-              fontSize: 11,
-            }}
-          />
-          <ReferenceLine
-            y={0}
-            stroke={theme.errorText}
-            strokeWidth={1}
-            strokeOpacity={0.5}
-          />
+          {thresholdIsRelevant && (
+            <ReferenceLine
+              y={lowBalanceThreshold}
+              stroke={theme.warningText}
+              strokeDasharray="5 5"
+              label={{
+                value: t('Threshold'),
+                position: 'right',
+                fill: theme.warningText,
+                fontSize: 11,
+              }}
+            />
+          )}
+          {yMin <= 0 && yMax >= 0 && (
+            <ReferenceLine
+              y={0}
+              stroke={theme.errorText}
+              strokeWidth={1}
+              strokeOpacity={0.5}
+            />
+          )}
           <Line
             type="monotone"
             dataKey="balance"

@@ -8,7 +8,7 @@ import type { ScheduleFormFields } from './ScheduleEditForm';
 export function updateScheduleConditions(
   schedule: Partial<ScheduleEntity>,
   fields: ScheduleFormFields,
-): { error?: string; conditions?: unknown[] } {
+): { error?: string; conditions?: unknown[]; actions?: unknown[] } {
   const conds = extractScheduleConds(schedule._conditions);
 
   const updateCond = (
@@ -32,11 +32,17 @@ export function updateScheduleConditions(
 
   // Validate
   if (fields.date == null) {
-    return { error: t('Date is required'), conditions: [] };
+    return { error: t('Date is required'), conditions: [], actions: [] };
   }
 
   if (fields.amount == null) {
-    return { error: t('A valid amount is required'), conditions: [] };
+    return { error: t('A valid amount is required'), conditions: [], actions: [] };
+  }
+
+  // Build actions array - always include link-schedule and optionally category
+  const actions: unknown[] = [];
+  if (fields.category) {
+    actions.push({ op: 'set', field: 'category', value: fields.category });
   }
 
   return {
@@ -52,5 +58,6 @@ export function updateScheduleConditions(
         value: fields.amount,
       },
     ].filter(val => !!val),
+    actions,
   };
 }

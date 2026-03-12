@@ -35,6 +35,7 @@ import {
 } from '@desktop-client/components/table';
 import { DisplayId } from '@desktop-client/components/util/DisplayId';
 import { useAccounts } from '@desktop-client/hooks/useAccounts';
+import { useCategories } from '@desktop-client/hooks/useCategories';
 import { useContextMenu } from '@desktop-client/hooks/useContextMenu';
 import { useDateFormat } from '@desktop-client/hooks/useDateFormat';
 import { useFormat } from '@desktop-client/hooks/useFormat';
@@ -74,6 +75,18 @@ export type ScheduleItemAction =
   | 'delete';
 
 export const ROW_HEIGHT = 43;
+
+// Extract category ID from schedule actions
+function getScheduleCategory(schedule: ScheduleEntity): string | null {
+  const actions = schedule._actions as
+    | Array<{ op: unknown; field?: string; value?: string }>
+    | undefined;
+  if (!actions) return null;
+  const categoryAction = actions.find(
+    a => a.op === 'set' && a.field === 'category',
+  );
+  return categoryAction?.value ?? null;
+}
 
 function OverflowMenu({
   schedule,
@@ -205,9 +218,11 @@ function ScheduleRow({
   minimal,
   statuses,
   dateFormat,
+  categories,
 }: {
   schedule: ScheduleEntity;
   dateFormat: string;
+  categories: Map<string, string>;
 } & Pick<
   SchedulesTableProps,
   'onSelect' | 'onAction' | 'minimal' | 'statuses'
@@ -278,6 +293,18 @@ function ScheduleRow({
       <Field width="flex" name="account">
         <DisplayId type="accounts" id={schedule._account} />
       </Field>
+      <Field width="flex" name="category">
+        {(() => {
+          const categoryId = getScheduleCategory(schedule);
+          return categoryId ? (
+            <Text title={categories.get(categoryId) || ''}>
+              {categories.get(categoryId) || '—'}
+            </Text>
+          ) : (
+            <Text style={{ color: theme.pageTextSubdued }}>—</Text>
+          );
+        })()}
+      </Field>
       <Field width={110} name="date">
         {schedule.next_date
           ? monthUtilFormat(schedule.next_date, dateFormat)
@@ -341,6 +368,17 @@ export function SchedulesTable({
 
   const { data: payees } = usePayees();
   const { data: accounts = [] } = useAccounts();
+  const { data: categoriesData } = useCategories();
+  const categoriesList = categoriesData?.list ?? [];
+
+  // Build category name lookup map
+  const categories = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cat of categoriesList) {
+      map.set(cat.id, cat.name);
+    }
+    return map;
+  }, [categoriesList]);
 
   const filteredSchedules = useMemo(() => {
     if (!filter) {
@@ -423,7 +461,7 @@ export function SchedulesTable({
     return (
       <ScheduleRow
         schedule={item as ScheduleEntity}
-        {...{ statuses, dateFormat, onSelect, onAction, minimal }}
+        {...{ statuses, dateFormat, onSelect, onAction, minimal, categories }}
       />
     );
   }
@@ -439,6 +477,9 @@ export function SchedulesTable({
         </Field>
         <Field width="flex">
           <Trans>Account</Trans>
+        </Field>
+        <Field width="flex">
+          <Trans>Category</Trans>
         </Field>
         <Field width={110}>
           <Trans>Next date</Trans>

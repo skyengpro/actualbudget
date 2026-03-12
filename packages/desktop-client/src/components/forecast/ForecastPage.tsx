@@ -1,15 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@actual-app/components/button';
-import { Select } from '@actual-app/components/select';
+import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import { styles } from '@actual-app/components/styles';
 import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
 
 import { AmountInput } from '@desktop-client/components/util/AmountInput';
-import type { AccountEntity, CurrencySummary } from 'loot-core/types/models';
+import type { AccountEntity, CurrencySummary, WhatIfScenario } from 'loot-core/types/models';
 
 import { Page, PageHeader } from '@desktop-client/components/Page';
 import { useReport } from '@desktop-client/components/reports/useReport';
@@ -17,77 +16,97 @@ import { useAccounts } from '@desktop-client/hooks/useAccounts';
 import { useFormat } from '@desktop-client/hooks/useFormat';
 import { useLocalPref } from '@desktop-client/hooks/useLocalPref';
 
-import { CurrencyAmount } from '@desktop-client/components/common/CurrencyAmount';
-
+import { BudgetComparison } from './BudgetComparison';
 import { CashFlowTable } from './CashFlowTable';
+import { CategoryBreakdownChart } from './CategoryBreakdownChart';
 import { ForecastAlerts } from './ForecastAlerts';
 import { ForecastChart } from './ForecastChart';
+import { IncomeExpenseChart } from './IncomeExpenseChart';
+import { PatternsList } from './PatternsList';
 import { createForecastSpreadsheet } from './spreadsheet';
+import { WhatIfPanel } from './WhatIfPanel';
 
 type ForecastDays = 30 | 60 | 90;
+type ForecastTab = 'overview' | 'budget' | 'patterns' | 'whatif';
 
-function AccountSelector({
-  accounts,
-  selectedIds,
+function AccountChip({
+  name,
+  isSelected,
+  onToggle,
+}: {
+  name: string;
+  isSelected: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <View
+      onClick={onToggle}
+      style={{
+        padding: '4px 10px',
+        borderRadius: 4,
+        border: `1px solid ${isSelected ? theme.pageTextLink : theme.tableBorder}`,
+        backgroundColor: isSelected ? `${theme.pageTextLink}15` : 'transparent',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: isSelected ? 500 : 400,
+          color: isSelected ? theme.pageTextLink : theme.pageTextSubdued,
+        }}
+      >
+        {name}
+      </Text>
+    </View>
+  );
+}
+
+function SegmentedControl({
+  options,
+  value,
   onChange,
 }: {
-  accounts: AccountEntity[];
-  selectedIds: string[];
-  onChange: (ids: string[]) => void;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
 }) {
-  const { t } = useTranslation();
-
-  const onBudgetAccounts = accounts.filter(a => !a.closed && !a.offbudget);
-
-  const toggleAccount = (accountId: string) => {
-    if (selectedIds.includes(accountId)) {
-      onChange(selectedIds.filter(id => id !== accountId));
-    } else {
-      onChange([...selectedIds, accountId]);
-    }
-  };
-
-  const selectAll = () => {
-    onChange(onBudgetAccounts.map(a => a.id));
-  };
-
-  const selectNone = () => {
-    onChange([]);
-  };
-
   return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button variant="bare" onPress={selectAll}>
-          <Text style={{ fontSize: 12 }}>{t('Select All')}</Text>
-        </Button>
-        <Button variant="bare" onPress={selectNone}>
-          <Text style={{ fontSize: 12 }}>{t('Clear')}</Text>
-        </Button>
-      </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {onBudgetAccounts.map(account => {
-          const isSelected = selectedIds.includes(account.id);
-          return (
-            <Button
-              key={account.id}
-              variant={isSelected ? 'primary' : 'normal'}
-              onPress={() => toggleAccount(account.id)}
-              style={{
-                padding: '6px 12px',
-                fontSize: 13,
-              }}
-            >
-              {account.name}
-              {account.currency && account.currency !== 'USD' && (
-                <Text style={{ fontSize: 10, marginLeft: 4, opacity: 0.7 }}>
-                  ({account.currency})
-                </Text>
-              )}
-            </Button>
-          );
-        })}
-      </View>
+    <View
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        backgroundColor: theme.tableBackground,
+        borderRadius: 4,
+        padding: 2,
+        border: `1px solid ${theme.tableBorder}`,
+      }}
+    >
+      {options.map(option => (
+        <View
+          key={option.value}
+          onClick={() => onChange(option.value)}
+          style={{
+            padding: '4px 12px',
+            borderRadius: 3,
+            backgroundColor: value === option.value ? theme.pageBackground : 'transparent',
+            boxShadow: value === option.value ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: value === option.value ? 600 : 400,
+              color: value === option.value ? theme.pageText : theme.pageTextSubdued,
+            }}
+          >
+            {option.label}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -95,59 +114,75 @@ function AccountSelector({
 function SummaryCard({
   title,
   value,
-  subtitle,
   isPositive,
   isNegative,
+  compact = false,
+  subtitle,
 }: {
   title: string;
   value: number;
-  subtitle?: string;
   isPositive?: boolean;
   isNegative?: boolean;
+  compact?: boolean;
+  subtitle?: string;
 }) {
+  const format = useFormat();
+
+  // Determine color based on value sign if colorize is enabled
+  const shouldColorize = isPositive || isNegative;
+  const textColor = shouldColorize
+    ? value > 0
+      ? theme.noticeTextLight
+      : value < 0
+        ? theme.errorText
+        : theme.pageText
+    : theme.pageText;
+
+  const formattedValue = format(value, 'financial');
+
   return (
     <View
       style={{
-        flex: 1,
-        minWidth: 140,
-        backgroundColor: theme.tableBackground,
-        borderRadius: 8,
-        padding: 16,
-        border: `1px solid ${theme.tableBorder}`,
+        minWidth: 0,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: compact ? 'center' : 'flex-start',
+        justifyContent: 'flex-start',
+        padding: compact ? '10px 8px' : '12px 16px',
       }}
     >
       <Text
         style={{
-          fontSize: 12,
+          fontSize: compact ? 10 : 11,
+          fontWeight: 500,
           color: theme.pageTextSubdued,
-          marginBottom: 4,
+          marginBottom: compact ? 4 : 6,
         }}
       >
         {title}
       </Text>
-      <CurrencyAmount
-        value={value}
-        colorize={isPositive || isNegative}
-        amountStyle={{
-          fontSize: 22,
+      <Text
+        style={{
+          fontSize: compact ? 18 : 22,
           fontWeight: 700,
+          color: textColor,
+          ...styles.monoText,
+          lineHeight: 1.2,
         }}
-        symbolStyle={{
-          fontSize: 14,
-          opacity: 0.7,
+      >
+        {formattedValue}
+      </Text>
+      <Text
+        style={{
+          fontSize: 10,
+          color: theme.pageTextSubdued,
+          marginTop: 4,
+          visibility: subtitle ? 'visible' : 'hidden',
         }}
-      />
-      {subtitle && (
-        <Text
-          style={{
-            fontSize: 11,
-            color: theme.pageTextSubdued,
-            marginTop: 4,
-          }}
-        >
-          {subtitle}
-        </Text>
-      )}
+      >
+        {subtitle || '\u00A0'}
+      </Text>
     </View>
   );
 }
@@ -268,32 +303,82 @@ function CurrencySummaryCard({ summary, format }: { summary: CurrencySummary; fo
 function InsightCard({
   title,
   children,
+  noPadding = false,
 }: {
   title: string;
   children: React.ReactNode;
+  noPadding?: boolean;
 }) {
   return (
-    <View
-      style={{
-        backgroundColor: theme.tableBackground,
-        borderRadius: 8,
-        padding: 16,
-        border: `1px solid ${theme.tableBorder}`,
-      }}
-    >
+    <View style={{ gap: 8 }}>
       <Text
         style={{
-          fontSize: 14,
+          fontSize: 12,
           fontWeight: 600,
           color: theme.pageTextSubdued,
-          marginBottom: 16,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
         }}
       >
         {title}
       </Text>
-      {children}
+      <View
+        style={{
+          backgroundColor: theme.tableBackground,
+          borderRadius: 8,
+          border: `1px solid ${theme.tableBorder}`,
+          overflow: 'hidden',
+          padding: noPadding ? 0 : 16,
+        }}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function TabBar({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: Array<{ id: string; label: string }>;
+  activeTab: string;
+  onTabChange: (id: string) => void;
+}) {
+  return (
+    <View
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 0,
+        borderBottom: `1px solid ${theme.tableBorder}`,
+      }}
+    >
+      {tabs.map(tab => {
+        const isActive = tab.id === activeTab;
+        return (
+          <View
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            style={{
+              padding: '12px 20px',
+              cursor: 'pointer',
+              borderBottom: isActive ? `2px solid ${theme.pageTextLink}` : '2px solid transparent',
+              marginBottom: -1,
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: isActive ? 600 : 400,
+                color: isActive ? theme.pageText : theme.pageTextSubdued,
+              }}
+            >
+              {tab.label}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -302,6 +387,7 @@ export function ForecastPage() {
   const { t } = useTranslation();
   const format = useFormat();
   const { data: accounts = [] } = useAccounts();
+  const { isNarrowWidth } = useResponsive();
 
   // Saved preferences
   const [savedThreshold, setSavedThreshold] = useLocalPref('forecast.lowBalanceThreshold');
@@ -311,6 +397,16 @@ export function ForecastPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(() => {
     return accounts.filter(a => !a.closed && !a.offbudget).map(a => a.id);
   });
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<ForecastTab>('overview');
+
+  // Pattern detection state
+  const [includePatterns, setIncludePatterns] = useState(false);
+  const [patternConfidenceThreshold, setPatternConfidenceThreshold] = useState(0.7);
+
+  // What-If scenario state
+  const [scenario, setScenario] = useState<WhatIfScenario | null>(null);
 
   const forecastDays: ForecastDays = savedDays || 30;
   const baseCurrency = format.currency.code || 'USD';
@@ -332,8 +428,19 @@ export function ForecastPage() {
         forecastDays,
         lowBalanceThreshold,
         baseCurrency,
+        includePatterns,
+        patternConfidenceThreshold,
+        scenario,
       }),
-    [selectedAccountIds, forecastDays, lowBalanceThreshold, baseCurrency],
+    [
+      selectedAccountIds,
+      forecastDays,
+      lowBalanceThreshold,
+      baseCurrency,
+      includePatterns,
+      patternConfidenceThreshold,
+      scenario,
+    ],
   );
 
   const data = useReport('financial-forecast', getForecastData);
@@ -354,65 +461,134 @@ export function ForecastPage() {
   const hasMultipleCurrencies =
     data?.currencySummaries && data.currencySummaries.length > 1;
 
+  // Get all scheduled items for WhatIfPanel
+  const allScheduledItems = useMemo(() => {
+    if (!data?.dailyBalances) return [];
+    return data.dailyBalances.flatMap(entry =>
+      entry.scheduledItems.map(item => ({
+        scheduleId: item.scheduleId,
+        payeeName: item.payeeName,
+        amount: item.amount,
+      })),
+    );
+  }, [data?.dailyBalances]);
+
   return (
     <Page header={<PageHeader title={t('Financial Forecast')} />}>
-      {/* Configuration Section */}
+      {/* Configuration Bar */}
       <View
         style={{
-          backgroundColor: theme.tableBackground,
-          borderRadius: 8,
-          padding: 16,
-          marginTop: 15,
-          marginBottom: 20,
-          border: `1px solid ${theme.tableBorder}`,
+          display: 'flex',
+          flexDirection: isNarrowWidth ? 'column' : 'row',
+          alignItems: isNarrowWidth ? 'stretch' : 'center',
+          gap: isNarrowWidth ? 12 : 20,
+          padding: '12px 0',
+          marginTop: 8,
+          marginBottom: 16,
         }}
       >
-        <View style={{ gap: 16 }}>
-          {/* Account Selection */}
-          <View>
-            <Text
+        {/* Accounts Dropdown-style */}
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Text style={{ fontSize: 12, color: theme.pageTextSubdued, whiteSpace: 'nowrap' }}>
+            {t('Accounts:')}
+          </Text>
+          <View style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {accounts.filter(a => !a.closed && !a.offbudget).map(account => (
+              <AccountChip
+                key={account.id}
+                name={account.name}
+                isSelected={selectedAccountIds.includes(account.id)}
+                onToggle={() => {
+                  if (selectedAccountIds.includes(account.id)) {
+                    setSelectedAccountIds(selectedAccountIds.filter(id => id !== account.id));
+                  } else {
+                    setSelectedAccountIds([...selectedAccountIds, account.id]);
+                  }
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Spacer */}
+        {!isNarrowWidth && <View style={{ flex: 1 }} />}
+
+        {/* Settings */}
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            gap: 12,
+            alignItems: 'center',
+          }}
+        >
+          <SegmentedControl
+            options={[
+              { value: '30', label: '30d' },
+              { value: '60', label: '60d' },
+              { value: '90', label: '90d' },
+            ]}
+            value={String(forecastDays)}
+            onChange={handleDaysChange}
+          />
+
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Text style={{ fontSize: 12, color: theme.pageTextSubdued }}>
+              {t('Alert below')}
+            </Text>
+            <View
               style={{
-                fontSize: 13,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: theme.pageText,
+                backgroundColor: theme.tableBackground,
+                borderRadius: 4,
+                border: `1px solid ${theme.tableBorder}`,
+                padding: '0 8px',
+                minWidth: 80,
               }}
             >
-              {t('Accounts to include:')}
-            </Text>
-            <AccountSelector
-              accounts={accounts}
-              selectedIds={selectedAccountIds}
-              onChange={setSelectedAccountIds}
-            />
-          </View>
-
-          {/* Days, Threshold, and Base Currency */}
-          <View style={{ flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 13, fontWeight: 500 }}>
-                {t('Forecast period:')}
-              </Text>
-              <Select
-                options={daysOptions}
-                value={String(forecastDays)}
-                onChange={handleDaysChange}
-              />
-            </View>
-
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 13, fontWeight: 500 }}>
-                {t('Low balance threshold:')}
-              </Text>
               <AmountInput
                 value={lowBalanceThreshold}
                 sign="+"
                 onUpdate={value => setSavedThreshold(Math.abs(value))}
-                style={{ width: 180 }}
+                inputStyle={{
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  padding: '4px 0',
+                  fontSize: 12,
+                }}
               />
             </View>
           </View>
         </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={{ marginBottom: 20 }}>
+        <TabBar
+          tabs={[
+            { id: 'overview', label: t('Overview') },
+            { id: 'budget', label: isNarrowWidth ? t('Budget') : t('Budget vs Forecast') },
+            { id: 'patterns', label: t('Patterns') },
+            { id: 'whatif', label: t('What-If') },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as ForecastTab)}
+        />
       </View>
 
       {/* Content */}
@@ -425,68 +601,227 @@ export function ForecastPage() {
           </Text>
         </View>
       ) : (
-        <View style={{ gap: 20 }}>
-          {/* Converted Totals Summary */}
-          <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-            <SummaryCard
-              title={t('Starting Balance')}
-              value={data.startingBalance}
-              subtitle={t('Current balance')}
-            />
-            <SummaryCard
-              title={t('Ending Balance')}
-              value={data.endingBalance}
-              subtitle={t('Projected in {{days}} days', { days: forecastDays })}
-              isPositive={data.endingBalance > data.startingBalance}
-              isNegative={data.endingBalance < data.startingBalance}
-            />
-            <SummaryCard
-              title={t('Total Income')}
-              value={data.totalIncome}
-              isPositive
-            />
-            <SummaryCard
-              title={t('Total Expenses')}
-              value={data.totalExpenses}
-              isNegative
-            />
-          </View>
-
-          {/* Per-Currency Breakdown (if multiple currencies) */}
-          {hasMultipleCurrencies && (
-            <InsightCard title={t('Currency Breakdown')}>
-              <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-                {data.currencySummaries.map(summary => (
-                  <CurrencySummaryCard key={summary.currency} summary={summary} format={format} />
-                ))}
+        <>
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <View style={{ gap: 16 }}>
+              {/* Summary Row */}
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
+              >
+                <View
+                  style={{
+                    flex: '1 1 200px',
+                    minWidth: 180,
+                    backgroundColor: theme.tableBackground,
+                    borderRadius: 8,
+                    border: `1px solid ${theme.tableBorder}`,
+                  }}
+                >
+                  <SummaryCard
+                    title={t('Current Balance')}
+                    value={data.startingBalance}
+                    subtitle={t('Today')}
+                  />
+                </View>
+                <View
+                  style={{
+                    flex: '1 1 200px',
+                    minWidth: 180,
+                    backgroundColor: theme.tableBackground,
+                    borderRadius: 8,
+                    border: `1px solid ${theme.tableBorder}`,
+                  }}
+                >
+                  <SummaryCard
+                    title={t('Projected')}
+                    value={data.endingBalance}
+                    isPositive={data.endingBalance > data.startingBalance}
+                    isNegative={data.endingBalance < data.startingBalance}
+                    subtitle={t('In {{days}} days', { days: forecastDays })}
+                  />
+                </View>
+                <View
+                  style={{
+                    flex: '1 1 200px',
+                    minWidth: 180,
+                    backgroundColor: theme.tableBackground,
+                    borderRadius: 8,
+                    border: `1px solid ${theme.tableBorder}`,
+                  }}
+                >
+                  <SummaryCard
+                    title={t('Income')}
+                    value={data.totalIncome}
+                    isPositive
+                  />
+                </View>
+                <View
+                  style={{
+                    flex: '1 1 200px',
+                    minWidth: 180,
+                    backgroundColor: theme.tableBackground,
+                    borderRadius: 8,
+                    border: `1px solid ${theme.tableBorder}`,
+                  }}
+                >
+                  <SummaryCard
+                    title={t('Expenses')}
+                    value={data.totalExpenses}
+                    isNegative
+                  />
+                </View>
               </View>
-            </InsightCard>
+
+              {/* Per-Currency Breakdown (if multiple currencies) */}
+              {hasMultipleCurrencies && (
+                <InsightCard title={t('Currency Breakdown')}>
+                  <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                    {data.currencySummaries.map(summary => (
+                      <CurrencySummaryCard key={summary.currency} summary={summary} format={format} />
+                    ))}
+                  </View>
+                </InsightCard>
+              )}
+
+              {/* Alerts - shown inline without card wrapper */}
+              {data.alerts.length > 0 && (
+                <View style={{ marginTop: 16 }}>
+                  <ForecastAlerts alerts={data.alerts} />
+                </View>
+              )}
+
+              {/* Balance Projection Chart */}
+              <View style={{ marginTop: 8 }}>
+                <InsightCard title={t('Balance Projection ({{currency}})', { currency: baseCurrency })}>
+                  <ForecastChart
+                    data={data.dailyBalances}
+                    lowBalanceThreshold={lowBalanceThreshold}
+                    baseCurrency={baseCurrency}
+                  />
+                </InsightCard>
+              </View>
+
+              {/* Income vs Expense Chart */}
+              <InsightCard title={t('Income vs Expenses')}>
+                <IncomeExpenseChart data={data.dailyBalances} groupBy="week" />
+              </InsightCard>
+
+              {/* Cash Flow Table */}
+              <InsightCard title={t('Upcoming Cash Flow')} noPadding>
+                <CashFlowTable
+                  data={data.dailyBalances}
+                  maxHeight={400}
+                />
+              </InsightCard>
+            </View>
           )}
 
-          {/* Alerts */}
-          {data.alerts.length > 0 && (
-            <InsightCard title={t('Alerts')}>
-              <ForecastAlerts alerts={data.alerts} />
-            </InsightCard>
+          {/* Budget vs Forecast Tab */}
+          {activeTab === 'budget' && (
+            <View style={{ gap: 16 }}>
+              <InsightCard title={t('Budget vs Forecast Comparison')}>
+                {data.categoryBreakdown && data.categoryBreakdown.length > 0 ? (
+                  <BudgetComparison data={data.categoryBreakdown} />
+                ) : (
+                  <View style={{ padding: 20, alignItems: 'center' }}>
+                    <Text style={{ color: theme.pageTextSubdued }}>
+                      {t('No category data available. Assign categories to your scheduled transactions.')}
+                    </Text>
+                  </View>
+                )}
+              </InsightCard>
+
+              {/* Category Donut Chart */}
+              {data.categoryBreakdown && data.categoryBreakdown.length > 0 && (
+                <InsightCard title={t('Expense Distribution')}>
+                  <CategoryBreakdownChart
+                    data={data.categoryBreakdown}
+                    showBudgetComparison
+                  />
+                </InsightCard>
+              )}
+            </View>
           )}
 
-          {/* Balance Projection Chart */}
-          <InsightCard title={t('Balance Projection ({{currency}})', { currency: baseCurrency })}>
-            <ForecastChart
-              data={data.dailyBalances}
-              lowBalanceThreshold={lowBalanceThreshold}
-              baseCurrency={baseCurrency}
-            />
-          </InsightCard>
+          {/* Patterns Tab */}
+          {activeTab === 'patterns' && (
+            <View style={{ gap: 16 }}>
+              <View
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  gap: 16,
+                  paddingBottom: 12,
+                  borderBottom: `1px solid ${theme.tableBorder}`,
+                }}
+              >
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: theme.pageTextSubdued }}>{t('Include in forecast:')}</Text>
+                  <SegmentedControl
+                    options={[
+                      { value: 'off', label: t('Off') },
+                      { value: 'on', label: t('On') },
+                    ]}
+                    value={includePatterns ? 'on' : 'off'}
+                    onChange={v => setIncludePatterns(v === 'on')}
+                  />
+                </View>
 
-          {/* Cash Flow Table */}
-          <InsightCard title={t('Upcoming Cash Flow')}>
-            <CashFlowTable
-              data={data.dailyBalances}
-              maxRows={15}
-            />
-          </InsightCard>
-        </View>
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={{ fontSize: 12, color: theme.pageTextSubdued }}>{t('Min confidence:')}</Text>
+                  <SegmentedControl
+                    options={[
+                      { value: '0.5', label: '50%' },
+                      { value: '0.7', label: '70%' },
+                      { value: '0.9', label: '90%' },
+                    ]}
+                    value={String(patternConfidenceThreshold)}
+                    onChange={v => setPatternConfidenceThreshold(parseFloat(v))}
+                  />
+                </View>
+              </View>
+
+              <InsightCard title={t('Detected Patterns')}>
+                <PatternsList
+                  patterns={data.detectedPatterns || []}
+                  confidenceThreshold={patternConfidenceThreshold}
+                />
+              </InsightCard>
+            </View>
+          )}
+
+          {/* What-If Tab */}
+          {activeTab === 'whatif' && (
+            <View style={{ gap: 16 }}>
+
+              <WhatIfPanel
+                scenario={scenario}
+                onScenarioChange={setScenario}
+                scheduledItems={allScheduledItems}
+                scenarioComparison={data.scenarioComparison}
+              />
+
+              {/* Show the chart with scenario applied */}
+              {scenario && (
+                <InsightCard title={t('Scenario Balance Projection')}>
+                  <ForecastChart
+                    data={data.dailyBalances}
+                    lowBalanceThreshold={lowBalanceThreshold}
+                    baseCurrency={baseCurrency}
+                  />
+                </InsightCard>
+              )}
+            </View>
+          )}
+        </>
       )}
     </Page>
   );

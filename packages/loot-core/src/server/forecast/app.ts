@@ -10,16 +10,22 @@ import {
   scheduleIsRecurring,
 } from '../../shared/schedules';
 import type {
+  BudgetComparison,
   CurrencySummary,
+  DetectedPattern,
   ExchangeRate,
   ForecastAlert,
+  ForecastCategoryBreakdown,
   ForecastConfig,
   ForecastData,
   ForecastEntry,
+  PredictedTransaction,
 } from '../../types/models';
 import { createApp } from '../app';
 import { aqlQuery } from '../aql';
 import * as db from '../db';
+import { detectRecurringPatterns, predictFutureTransactions } from './pattern-detection';
+import { getBudgetForPeriod, compareForecastToBudget } from './budget-integration';
 
 // Check if currency column exists in accounts table
 function hasCurrencyColumn(): boolean {
@@ -170,9 +176,48 @@ async function getAccountBalancesByCurrency(
   return { balances, accountCurrencies };
 }
 
+// Get category names in batch
+async function getCategoryNames(
+  categoryIds: (string | null | undefined)[],
+): Promise<Record<string, string>> {
+  const categories: Record<string, string> = {};
+  const uniqueCategoryIds = [...new Set(categoryIds.filter((id): id is string => !!id))];
+
+  if (uniqueCategoryIds.length > 0) {
+    try {
+      const { data } = await aqlQuery(
+        q('categories')
+          .filter({ id: { $oneof: uniqueCategoryIds } })
+          .select(['id', 'name']),
+      );
+      for (const c of data || []) {
+        if (c.id) categories[c.id] = c.name || 'Uncategorized';
+      }
+    } catch {
+      // Ignore error
+    }
+  }
+
+  return categories;
+}
+
+// Extract category from schedule actions
+function extractCategoryFromSchedule(
+  schedule: { _actions?: Array<{ op: string; field: string; value: unknown }> },
+): string | null {
+  if (!schedule._actions) return null;
+
+  const categoryAction = schedule._actions.find(
+    a => a.op === 'set' && a.field === 'category',
+  );
+
+  return (categoryAction?.value as string) || null;
+}
+
 // Get schedules for selected accounts
 async function getSchedulesForAccounts(
   accountIds: string[],
+  defaultAccountId?: string,
 ): Promise<
   Array<{
     id: string;
@@ -183,22 +228,37 @@ async function getSchedulesForAccounts(
     _amount: number | { num1: number; num2: number };
     _date: { frequency?: string } | null;
     _conditions: Array<{ op: string; field: string; value: unknown }>;
+    _actions?: Array<{ op: string; field: string; value: unknown }>;
   }>
 > {
   try {
     const { data: schedules } = await aqlQuery(
       q('schedules')
-        .filter({ completed: false, '_account.closed': false })
+        .filter({ completed: false })
         .select('*'),
     );
 
     if (!schedules || accountIds.length === 0) {
-      return schedules || [];
+      return [];
     }
 
-    return schedules.filter(
-      (s: { _account: string }) => s._account && accountIds.includes(s._account),
-    );
+    // Include schedules that:
+    // 1. Have an account that's in the selected accounts, OR
+    // 2. Have no account (assign to default account for forecasting)
+    return schedules
+      .filter((s: { _account: string | null }) => {
+        // If schedule has an account, it must be in the selected accounts
+        if (s._account) {
+          return accountIds.includes(s._account);
+        }
+        // If schedule has no account, include it (will use default)
+        return true;
+      })
+      .map((s: { _account: string | null }) => ({
+        ...s,
+        // Assign default account if none specified
+        _account: s._account || defaultAccountId || accountIds[0],
+      }));
   } catch (e) {
     console.error('Error getting schedules:', e);
     return [];
@@ -308,7 +368,15 @@ export async function calculateForecast({
 }: {
   config: ForecastConfig;
 }): Promise<ForecastData> {
-  const { accountIds, forecastDays, lowBalanceThreshold, baseCurrency } = config;
+  const {
+    accountIds,
+    forecastDays,
+    lowBalanceThreshold,
+    baseCurrency,
+    includePatterns = false,
+    patternConfidenceThreshold = 0.7,
+    scenario = null,
+  } = config;
   const safeCurrency = baseCurrency || 'USD';
 
   try {
@@ -325,15 +393,21 @@ export async function calculateForecast({
       currencies.push(safeCurrency);
     }
 
-    // Get schedules
-    const schedules = await getSchedulesForAccounts(accountIds);
+    // Get schedules (pass first selected account as default for schedules without account)
+    const schedules = await getSchedulesForAccounts(accountIds, accountIds[0]);
     const statuses = await getScheduleStatuses(schedules);
+
+    // Extract category IDs from schedules
+    const scheduleCategoryIds = schedules.map(s => extractCategoryFromSchedule(s));
 
     // Get names in batch
     const { payees: payeeNames, accounts: accountNames } = await getNames(
       schedules.map(s => s._payee),
       schedules.map(s => s._account),
     );
+
+    // Get category names
+    const categoryNames = await getCategoryNames(scheduleCategoryIds);
 
     // Calculate date range
     const today = monthUtils.currentDay();
@@ -352,6 +426,7 @@ export async function calculateForecast({
         totalIncome: 0,
         totalExpenses: 0,
         scheduledItems: [],
+        categoryAmounts: {},
       };
 
       // Initialize all currencies
@@ -365,17 +440,29 @@ export async function calculateForecast({
       currentDate = monthUtils.addDays(currentDate, 1);
     }
 
+    // Track total amounts per category across all days
+    const totalCategoryAmounts: Record<string, number> = {};
+
     // Process schedules
     for (const schedule of schedules) {
       const status = statuses.get(schedule.id);
       if (schedule.completed) continue;
 
+      // Skip disabled schedules in scenario mode
+      if (scenario && scenario.disabledScheduleIds.includes(schedule.id)) {
+        continue;
+      }
+
       const { date: dateConditions } = extractScheduleConds(schedule._conditions || []);
       const isRecurring = scheduleIsRecurring(dateConditions);
       const amount = getScheduledAmount(schedule._amount);
       const currency = accountCurrencies[schedule._account] || safeCurrency;
-      const payeeName = payeeNames[schedule._payee] || 'Unknown';
-      const accountName = accountNames[schedule._account] || 'Unknown';
+      const payeeName = schedule._payee ? (payeeNames[schedule._payee] || 'Unknown Payee') : '';
+      const accountName = schedule._account ? (accountNames[schedule._account] || 'Unknown Account') : '';
+
+      // Extract category information
+      const categoryId = extractCategoryFromSchedule(schedule);
+      const categoryName = categoryId ? (categoryNames[categoryId] || null) : null;
 
       // Collect dates for this schedule
       const scheduleDates: string[] = [];
@@ -442,6 +529,8 @@ export async function calculateForecast({
             currency,
             accountId: schedule._account,
             accountName,
+            categoryId,
+            categoryName,
           });
 
           if (amount > 0) {
@@ -451,7 +540,152 @@ export async function calculateForecast({
             entry.expensesByCurrency[currency] =
               (entry.expensesByCurrency[currency] || 0) + amount;
           }
+
+          // Track category amounts
+          if (categoryId) {
+            entry.categoryAmounts![categoryId] =
+              (entry.categoryAmounts![categoryId] || 0) + amount;
+            totalCategoryAmounts[categoryId] =
+              (totalCategoryAmounts[categoryId] || 0) + amount;
+          }
         }
+      }
+    }
+
+    // Add hypothetical items from scenario
+    if (scenario) {
+      for (const item of scenario.hypotheticalItems) {
+        if (item.isRecurring && item.frequency) {
+          // Add recurring hypothetical items
+          let itemDate = item.startDate;
+          while (itemDate <= endDate) {
+            if (itemDate >= today) {
+              const entry = dailyMap.get(itemDate);
+              if (entry) {
+                entry.scheduledItems.push({
+                  scheduleId: `hypothetical-${item.id}`,
+                  payeeName: item.payeeName,
+                  amount: item.amount,
+                  currency: safeCurrency,
+                  accountId: '',
+                  accountName: 'Hypothetical',
+                  categoryId: item.categoryId,
+                  categoryName: item.categoryName,
+                });
+
+                if (item.amount > 0) {
+                  entry.incomeByCurrency[safeCurrency] =
+                    (entry.incomeByCurrency[safeCurrency] || 0) + item.amount;
+                } else {
+                  entry.expensesByCurrency[safeCurrency] =
+                    (entry.expensesByCurrency[safeCurrency] || 0) + item.amount;
+                }
+
+                if (item.categoryId) {
+                  entry.categoryAmounts![item.categoryId] =
+                    (entry.categoryAmounts![item.categoryId] || 0) + item.amount;
+                  totalCategoryAmounts[item.categoryId] =
+                    (totalCategoryAmounts[item.categoryId] || 0) + item.amount;
+                }
+              }
+            }
+
+            // Calculate next date based on frequency
+            if (item.frequency === 'weekly') {
+              itemDate = monthUtils.addDays(itemDate, 7);
+            } else if (item.frequency === 'biweekly') {
+              itemDate = monthUtils.addDays(itemDate, 14);
+            } else {
+              // monthly - add one month
+              const parsed = monthUtils.parseDate(itemDate);
+              itemDate = d.format(d.addMonths(parsed, 1), 'yyyy-MM-dd');
+            }
+          }
+        } else {
+          // Single hypothetical item
+          if (item.startDate >= today && item.startDate <= endDate) {
+            const entry = dailyMap.get(item.startDate);
+            if (entry) {
+              entry.scheduledItems.push({
+                scheduleId: `hypothetical-${item.id}`,
+                payeeName: item.payeeName,
+                amount: item.amount,
+                currency: safeCurrency,
+                accountId: '',
+                accountName: 'Hypothetical',
+                categoryId: item.categoryId,
+                categoryName: item.categoryName,
+              });
+
+              if (item.amount > 0) {
+                entry.incomeByCurrency[safeCurrency] =
+                  (entry.incomeByCurrency[safeCurrency] || 0) + item.amount;
+              } else {
+                entry.expensesByCurrency[safeCurrency] =
+                  (entry.expensesByCurrency[safeCurrency] || 0) + item.amount;
+              }
+
+              if (item.categoryId) {
+                entry.categoryAmounts![item.categoryId] =
+                  (entry.categoryAmounts![item.categoryId] || 0) + item.amount;
+                totalCategoryAmounts[item.categoryId] =
+                  (totalCategoryAmounts[item.categoryId] || 0) + item.amount;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Pattern detection
+    let detectedPatterns: DetectedPattern[] = [];
+    let predictedTransactions: PredictedTransaction[] = [];
+
+    if (includePatterns) {
+      try {
+        detectedPatterns = await detectRecurringPatterns(accountIds, 6); // Look back 6 months
+        const filteredPatterns = detectedPatterns.filter(
+          p => p.confidence >= patternConfidenceThreshold,
+        );
+        predictedTransactions = predictFutureTransactions(
+          filteredPatterns,
+          today,
+          endDate,
+        );
+
+        // Add predicted transactions to daily entries
+        for (const predicted of predictedTransactions) {
+          const entry = dailyMap.get(predicted.date);
+          if (entry) {
+            entry.scheduledItems.push({
+              scheduleId: `predicted-${predicted.id}`,
+              payeeName: predicted.payeeName,
+              amount: predicted.amount,
+              currency: safeCurrency,
+              accountId: '',
+              accountName: 'Predicted',
+              categoryId: predicted.categoryId,
+              categoryName: predicted.categoryName,
+            });
+
+            if (predicted.amount > 0) {
+              entry.incomeByCurrency[safeCurrency] =
+                (entry.incomeByCurrency[safeCurrency] || 0) + predicted.amount;
+            } else {
+              entry.expensesByCurrency[safeCurrency] =
+                (entry.expensesByCurrency[safeCurrency] || 0) + predicted.amount;
+            }
+
+            if (predicted.categoryId) {
+              entry.categoryAmounts![predicted.categoryId] =
+                (entry.categoryAmounts![predicted.categoryId] || 0) + predicted.amount;
+              totalCategoryAmounts[predicted.categoryId] =
+                (totalCategoryAmounts[predicted.categoryId] || 0) + predicted.amount;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Pattern detection error:', e);
       }
     }
 
@@ -589,6 +823,75 @@ export async function calculateForecast({
       );
     }
 
+    // Build category breakdown
+    const categoryBreakdown: ForecastCategoryBreakdown[] = [];
+    const allCategoryIds = Object.keys(totalCategoryAmounts);
+    const allCategoryNames = await getCategoryNames(allCategoryIds);
+
+    for (const catId of allCategoryIds) {
+      categoryBreakdown.push({
+        categoryId: catId,
+        categoryName: allCategoryNames[catId] || 'Uncategorized',
+        scheduledAmount: totalCategoryAmounts[catId],
+        budgetedAmount: 0,
+        variance: 0,
+      });
+    }
+
+    // Budget comparison
+    let budgetComparison: BudgetComparison[] = [];
+    try {
+      const startMonth = monthUtils.monthFromDate(today);
+      const endMonth = monthUtils.monthFromDate(endDate);
+
+      // getBudgetForPeriod now properly sums budgets across all months
+      // and updates categoryBreakdown with correct totals in place
+      budgetComparison = await getBudgetForPeriod(
+        startMonth,
+        endMonth,
+        totalCategoryAmounts,
+        categoryBreakdown,
+      );
+
+      // Add over_budget alerts for categories that exceed their budget
+      for (const cat of categoryBreakdown) {
+        if (cat.budgetedAmount > 0 && Math.abs(cat.scheduledAmount) > cat.budgetedAmount) {
+          const overAmount = Math.abs(cat.scheduledAmount) - cat.budgetedAmount;
+          alerts.push({
+            type: 'over_budget',
+            date: today,
+            balance: cat.scheduledAmount,
+            currency: safeCurrency,
+            message: `${cat.categoryName} forecast exceeds budget by ${overAmount}`,
+            categoryId: cat.categoryId,
+            categoryName: cat.categoryName,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Budget comparison error:', e);
+    }
+
+    // Calculate scenario comparison if applicable
+    let scenarioComparison = null;
+    if (scenario) {
+      // Calculate baseline (without scenario modifications)
+      const baselineConfig = { ...config, scenario: null };
+      const baseline = await calculateForecast({ config: baselineConfig });
+
+      scenarioComparison = {
+        baseline: {
+          endingBalance: baseline.endingBalance,
+          totalExpenses: baseline.totalExpenses,
+        },
+        scenario: {
+          endingBalance: totalEnding,
+          totalExpenses,
+        },
+        difference: totalEnding - baseline.endingBalance,
+      };
+    }
+
     return {
       dailyBalances,
       alerts,
@@ -600,6 +903,11 @@ export async function calculateForecast({
       baseCurrency: safeCurrency,
       currencies,
       exchangeRates,
+      categoryBreakdown,
+      budgetComparison,
+      detectedPatterns: includePatterns ? detectedPatterns : undefined,
+      predictedTransactions: includePatterns ? predictedTransactions : undefined,
+      scenarioComparison,
     };
   } catch (error) {
     console.error('Forecast calculation error:', error);
@@ -615,6 +923,8 @@ export async function calculateForecast({
       baseCurrency: safeCurrency,
       currencies: [safeCurrency],
       exchangeRates: {},
+      categoryBreakdown: [],
+      budgetComparison: [],
     };
   }
 }
