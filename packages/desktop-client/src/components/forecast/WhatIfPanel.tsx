@@ -221,24 +221,34 @@ export function WhatIfPanel({
       {scenarioComparison && hasChanges && (
         <View
           style={{
-            backgroundColor: theme.pageTextLink + '15',
+            backgroundColor: theme.tableBackground,
             borderRadius: 8,
             padding: 16,
-            border: `1px solid ${theme.pageTextLink}40`,
+            border: `1px solid ${theme.tableBorder}`,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: theme.pageTextLink,
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
               marginBottom: 12,
-              textTransform: 'uppercase',
-              letterSpacing: 0.5,
+              paddingBottom: 12,
+              borderBottom: `1px solid ${theme.tableBorder}`,
             }}
           >
-            {t('Scenario Impact')}
-          </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: theme.pageText,
+                letterSpacing: 0.3,
+              }}
+            >
+              {t('Scenario Impact')}
+            </Text>
+          </View>
           <View style={{ display: 'flex', flexDirection: 'row', gap: 24, flexWrap: 'wrap' }}>
             <View style={{ minWidth: 140 }}>
               <Text style={{ fontSize: 11, color: theme.pageTextSubdued, marginBottom: 4 }}>
@@ -299,14 +309,32 @@ export function WhatIfPanel({
           style={{
             backgroundColor: theme.tableBackground,
             borderRadius: 8,
-            padding: 20,
+            padding: 16,
             border: `1px solid ${theme.tableBorder}`,
-            textAlign: 'center',
           }}
         >
-          <Text style={{ fontSize: 14, color: theme.pageText, marginBottom: 8 }}>
-            {t('Simulate Financial Scenarios')}
-          </Text>
+          <View
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: `1px solid ${theme.tableBorder}`,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: theme.pageText,
+                letterSpacing: 0.3,
+              }}
+            >
+              {t('Simulate Financial Scenarios')}
+            </Text>
+          </View>
           <Text style={{ fontSize: 12, color: theme.pageTextSubdued, lineHeight: 1.5 }}>
             {t('Add hypothetical transactions or toggle existing schedules to see how they would affect your forecast.')}
           </Text>
@@ -322,16 +350,28 @@ export function WhatIfPanel({
           border: `1px solid ${theme.tableBorder}`,
         }}
       >
-        <Text
+        <View
           style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: theme.pageText,
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
             marginBottom: 16,
+            paddingBottom: 12,
+            borderBottom: `1px solid ${theme.tableBorder}`,
           }}
         >
-          {t('Add Hypothetical Transaction')}
-        </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: theme.pageText,
+              letterSpacing: 0.3,
+            }}
+          >
+            {t('Add Hypothetical Transaction')}
+          </Text>
+        </View>
 
         {/* Row 1: Payee, Amount, Category */}
         <View style={{ display: 'flex', flexDirection: 'row', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -450,16 +490,28 @@ export function WhatIfPanel({
             border: `1px solid ${theme.tableBorder}`,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: theme.pageText,
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
               marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: `1px solid ${theme.tableBorder}`,
             }}
           >
-            {t('Your Hypothetical Transactions')}
-          </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: theme.pageText,
+                letterSpacing: 0.3,
+              }}
+            >
+              {t('Your Hypothetical Transactions')}
+            </Text>
+          </View>
           <View style={{ gap: 8 }}>
             {currentScenario.hypotheticalItems.map(item => (
               <View
@@ -520,25 +572,40 @@ export function WhatIfPanel({
             border: `1px solid ${theme.tableBorder}`,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: theme.pageText,
-              marginBottom: 4,
-            }}
-          >
-            {t('Toggle Existing Schedules')}
-          </Text>
-          <Text
-            style={{
-              fontSize: 11,
-              color: theme.pageTextSubdued,
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
               marginBottom: 12,
+              paddingBottom: 12,
+              borderBottom: `1px solid ${theme.tableBorder}`,
             }}
           >
-            {t('Uncheck to see what happens if you remove a recurring transaction')}
-          </Text>
+            <View>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: theme.pageText,
+                  letterSpacing: 0.3,
+                }}
+              >
+                {t('Toggle Existing Schedules')}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  color: theme.pageTextSubdued,
+                  marginTop: 4,
+                }}
+              >
+                {t('Uncheck to see what happens if you remove a recurring transaction')}
+              </Text>
+            </View>
+          </View>
           <View style={{ gap: 6 }}>
             {uniqueSchedules.slice(0, 10).map(item => {
               const isEnabled = !currentScenario.disabledScheduleIds.includes(item.scheduleId);
