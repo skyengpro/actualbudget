@@ -10,6 +10,7 @@ import {
   SvgCog,
   SvgCreditCard,
   SvgFileDouble,
+  SvgFlag,
   SvgReports,
   SvgStoreFront,
   SvgTag,
@@ -71,6 +72,7 @@ export function PrimaryButtons() {
         }
       />
       <Item title={t('Schedules')} Icon={SvgCalendar3} to="/schedules" />
+      <Item title={t('Priority')} Icon={SvgFlag} to="/priority" />
       <Item
         title={t('More')}
         Icon={isOpen ? SvgCheveronDown : SvgCheveronRight}

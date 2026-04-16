@@ -67,6 +67,7 @@ import { SimpleFinInitialiseModal } from './modals/SimpleFinInitialiseModal';
 import { TemplateEditModal } from './modals/TemplateEditModal';
 import { TemplateApplyModal } from './modals/TemplateApplyModal';
 import { SyncOffBudgetModal } from './modals/SyncOffBudgetModal';
+import { SyncToBudgetModal } from './modals/SyncToBudgetModal';
 import { BudgetTemplatesModal } from './modals/BudgetTemplatesModal';
 import { BudgetGoalEditModal } from './modals/BudgetGoalEditModal';
 import { BudgetScenariosModal } from './modals/BudgetScenariosModal';
@@ -76,6 +77,7 @@ import { ShareFileModal } from './modals/ShareFileModal';
 import { TrackingBalanceMenuModal } from './modals/TrackingBalanceMenuModal';
 import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
 import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
+import { PriorityItemEditModal } from './modals/PriorityItemEditModal';
 import { TrackingBudgetSummaryModal } from './modals/TrackingBudgetSummaryModal';
 import { TransferModal } from './modals/TransferModal';
 import { TransferOwnership } from './modals/TransferOwnership';
@@ -252,6 +254,9 @@ export function Modals() {
         case 'schedule-edit':
           return <ScheduleEditModal key={key} {...modal.options} />;
 
+        case 'priority-item-edit':
+          return <PriorityItemEditModal key={key} {...modal.options} />;
+
         case 'schedule-link':
           return <ScheduleLink key={key} {...modal.options} />;
 
@@ -424,6 +429,9 @@ export function Modals() {
 
         case 'sync-off-budget':
           return <SyncOffBudgetModal key={key} {...modal.options} />;
+
+        case 'sync-to-budget':
+          return <SyncToBudgetModal key={key} {...modal.options} />;
 
         case 'reimbursement-edit':
           return <ReimbursementEditModal key={key} {...modal.options} />;

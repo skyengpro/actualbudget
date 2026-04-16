@@ -912,7 +912,7 @@ class AccountInternal extends PureComponent<
         this.props.dispatch(
           pushModal({
             modal: {
-              name: 'sync-off-budget',
+              name: 'sync-to-budget',
               options: {
                 accountId,
               },

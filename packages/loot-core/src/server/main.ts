@@ -44,6 +44,8 @@ import { app as forecastApp } from './forecast/app';
 import { app as budgetTemplatesApp } from './budget-templates/app';
 import { app as budgetGoalsApp } from './budget-goals/app';
 import { app as budgetScenariosApp } from './budget-scenarios/app';
+import { app as priorityListApp } from './priority-list/app';
+import { app as syncOffBudgetApp } from './sync-off-budget/app';
 import { app as toolsApp } from './tools/app';
 import { app as transactionsApp } from './transactions/app';
 import * as rules from './transactions/transaction-rules';
@@ -162,6 +164,8 @@ app.combine(
   budgetTemplatesApp,
   budgetGoalsApp,
   budgetScenariosApp,
+  priorityListApp,
+  syncOffBudgetApp,
 );
 
 export function getDefaultDocumentDir() {

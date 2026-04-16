@@ -21,6 +21,8 @@ import type { ForecastHandlers } from '../server/forecast/app';
 import type { BudgetTemplatesHandlers } from '../server/budget-templates/app';
 import type { BudgetGoalsHandlers } from '../server/budget-goals/app';
 import type { BudgetScenariosHandlers } from '../server/budget-scenarios/app';
+import type { PriorityListHandlers } from '../server/priority-list/app';
+import type { SyncOffBudgetHandlers } from '../server/sync-off-budget/app';
 import type { ToolsHandlers } from '../server/tools/app';
 import type { TransactionHandlers } from '../server/transactions/app';
 
@@ -53,6 +55,8 @@ export type Handlers = {} & ServerHandlers &
   BudgetTemplatesHandlers &
   BudgetGoalsHandlers &
   BudgetScenariosHandlers &
+  PriorityListHandlers &
+  SyncOffBudgetHandlers &
   AuthHandlers;
 
 export type HandlerFunctions = Handlers[keyof Handlers];

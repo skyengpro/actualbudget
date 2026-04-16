@@ -11,6 +11,10 @@ export { MobileRuleEditPage as RuleEdit } from '../mobile/rules/MobileRuleEditPa
 export { MobileSchedulesPage as Schedules } from '../mobile/schedules/MobileSchedulesPage';
 export { MobileScheduleEditPage as ScheduleEdit } from '../mobile/schedules/MobileScheduleEditPage';
 
+// TODO: Create mobile version of Priority List. For PR 1 we reuse the wide
+// page; it renders adequately on narrow widths.
+export { PriorityListPage as Priority } from '../priority/PriorityListPage';
+
 // Lazy-loaded components for code splitting
 // TODO: Create mobile version of Templates
 export function Templates() {

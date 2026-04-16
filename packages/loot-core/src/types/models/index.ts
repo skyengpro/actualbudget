@@ -22,6 +22,7 @@ export type * from './forecast';
 export type * from './budget-template';
 export type * from './budget-goal';
 export type * from './budget-scenario';
+export type * from './priority-item';
 export type * from './user';
 export type * from './user-access';
 export type * from './tags';

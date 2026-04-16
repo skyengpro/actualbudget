@@ -308,6 +308,10 @@ export function FinancesApp() {
                   element={<NarrowAlternate name="Schedules" />}
                 />
                 <Route
+                  path="/priority"
+                  element={<NarrowAlternate name="Priority" />}
+                />
+                <Route
                   path="/templates"
                   element={<NarrowAlternate name="Templates" />}
                 />
