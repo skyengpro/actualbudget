@@ -5,6 +5,8 @@ export { Budget } from '../budget';
 export { Schedules } from '../schedules';
 export { Schedules as ScheduleEdit } from '../schedules';
 
+export { PriorityListPage as Priority } from '../priority/PriorityListPage';
+
 // Lazy-loaded components for code splitting
 export function Templates() {
   return (

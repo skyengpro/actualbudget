@@ -96,6 +96,25 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
     });
   }, [selectedOffBudgetId]);
 
+  // Auto-select source account when transactions are loaded
+  useEffect(() => {
+    if (transactions.length === 0 || selectedOnBudgetId) return;
+
+    // Look for transfers (payee with transfer_acct pointing to an on-budget account)
+    for (const txn of transactions) {
+      if (txn.payee) {
+        const payee = payees.find(p => p.id === txn.payee);
+        if (payee?.transfer_acct) {
+          const sourceAccount = accounts.find(a => a.id === payee.transfer_acct);
+          if (sourceAccount && !sourceAccount.offbudget && !sourceAccount.closed) {
+            setSelectedOnBudgetId(sourceAccount.id);
+            break;
+          }
+        }
+      }
+    }
+  }, [transactions, payees, accounts, selectedOnBudgetId]);
+
   const toggleTransaction = (id: string) => {
     setTransactions(prev =>
       prev.map(t => t.id === id ? { ...t, selected: !t.selected } : t)
@@ -140,51 +159,71 @@ export function SyncOffBudgetModal({ accountId }: SyncOffBudgetModalProps) {
     setIsSyncing(true);
 
     try {
-      // Find the transfer payee for the on-budget account (to create transfer FROM off-budget TO on-budget)
-      const onBudgetTransferPayee = payees.find(p => p.transfer_acct === selectedOnBudgetId);
-
       for (const txn of selectedTransactions) {
-        // Step 1: Create the categorized expense in the on-budget account
-        // This is the actual expense that affects the budget
+        // Check if original transaction is a transfer (has matching entry in on-budget)
+        const txnPayee = payees.find(p => p.id === txn.payee);
+        const isTransfer = txnPayee?.transfer_acct != null;
+
+        const absAmount = Math.abs(txn.amount || 0);
+
+        // Sync flow depends on whether original is a transfer or not:
+        //
+        // If TRANSFER (money came from on-budget):
+        // 1. Delete original transfer (this also deletes matching entry in on-budget)
+        //    - Off-budget: decreases (transfer IN deleted)
+        //    - On-budget: increases (transfer OUT deleted)
+        // 2. Create EXPENSE in on-budget with category
+        //    - On-budget: decreases (expense)
+        //    - Budget: affected
+        // Result: Off-budget -X, On-budget +X-X=0, Budget shows expense
+        //
+        // If NOT TRANSFER (standalone transaction):
+        // 1. Delete original
+        //    - Off-budget: decreases
+        // 2. Create EXPENSE in on-budget with category
+        //    - On-budget: decreases
+        //    - Budget: affected
+        // 3. Create CREDIT to balance on-budget
+        //    - On-budget: increases back
+        // Result: Off-budget -X, On-budget -X+X=0, Budget shows expense
+
+        // Step 1: Delete original from off-budget
+        await send('transactions-batch-update', {
+          deleted: [{ id: txn.id }],
+        });
+
+        // Step 2: Create EXPENSE (debit) in on-budget with category
         const expenseId = uuidv4();
         await send('transactions-batch-update', {
           added: [{
             id: expenseId,
             account: selectedOnBudgetId,
             date: txn.date,
-            amount: txn.amount,
+            amount: -absAmount,
             payee: txn.payee,
             category: txn.assignedCategory,
             notes: txn.notes,
-            cleared: false,
+            cleared: true,
           }],
         });
 
-        // Step 2: Create a transfer FROM off-budget TO on-budget
-        // This balances the on-budget account (the off-budget account "pays" for the expense)
-        // The transfer will automatically create the matching entry in on-budget
-        if (onBudgetTransferPayee) {
-          const transferId = uuidv4();
+        // Step 3: Only create CREDIT if original was NOT a transfer
+        // (If it was a transfer, deleting it already "credited" on-budget)
+        if (!isTransfer) {
+          const creditId = uuidv4();
           await send('transactions-batch-update', {
             added: [{
-              id: transferId,
-              account: selectedOffBudgetId,
+              id: creditId,
+              account: selectedOnBudgetId,
               date: txn.date,
-              amount: txn.amount, // Same amount (negative = money flows out)
-              payee: onBudgetTransferPayee.id,
-              category: null, // Transfers don't have categories
+              amount: absAmount,
+              payee: txn.payee,
+              category: null,
               notes: '[SYNCED] ' + (txn.notes || ''),
               cleared: true,
-              reconciled: true, // Lock the transaction so it can't be modified
             }],
           });
         }
-
-        // Step 3: Delete the original off-budget transaction
-        // It's now replaced by the transfer
-        await send('transactions-batch-update', {
-          deleted: [{ id: txn.id }],
-        });
       }
 
       dispatch(closeModal());

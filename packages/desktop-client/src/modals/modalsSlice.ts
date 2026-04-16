@@ -273,6 +273,19 @@ export type Modal =
         id?: string;
         transaction?: TransactionEntity;
         template?: TransactionTemplateEntity;
+        /**
+         * Called with the newly created schedule's id after `schedule/create`
+         * succeeds. Lets callers link the schedule back to domain objects
+         * (e.g. priority items) without modifying the schedule handler.
+         */
+        onScheduleCreated?: (scheduleId: string) => void | Promise<void>;
+      } | null;
+    }
+  | {
+      name: 'priority-item-edit';
+      options: {
+        id?: string;
+        onSaved?: () => void;
       } | null;
     }
   | {
@@ -616,6 +629,10 @@ export type Modal =
     }
   | {
       name: 'sync-off-budget';
+      options: { accountId?: string };
+    }
+  | {
+      name: 'sync-to-budget';
       options: { accountId?: string };
     }
   | {

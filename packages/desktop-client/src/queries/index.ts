@@ -41,16 +41,13 @@ export function accountFilter(
     } else if (accountId === 'closed') {
       return { [`${field}.closed`]: true };
     } else if (accountId === 'uncategorized') {
+      // Only include non-transfers in uncategorized
+      // Transfers to off-budget accounts are bookkeeping entries and don't need categories
       return {
         [`${field}.offbudget`]: false,
         category: null,
         is_parent: false,
-        $or: [
-          {
-            'payee.transfer_acct.offbudget': true,
-            'payee.transfer_acct': null,
-          },
-        ],
+        'payee.transfer_acct': null,
       };
     } else {
       return { [field]: accountId };
@@ -120,14 +117,12 @@ export function transactionsSearch(
 }
 
 export function uncategorizedTransactions() {
+  // Only include non-transfers in uncategorized
+  // Transfers are bookkeeping entries and don't need categories
   return q('transactions').filter({
     'account.offbudget': false,
     category: null,
-    $or: [
-      {
-        'payee.transfer_acct.offbudget': true,
-        'payee.transfer_acct': null,
-      },
-    ],
+    is_parent: false,
+    'payee.transfer_acct': null,
   });
 }

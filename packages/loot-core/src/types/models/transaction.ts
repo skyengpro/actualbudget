@@ -36,4 +36,10 @@ export type TransactionEntity = {
   } | null;
   raw_synced_data?: string | undefined;
   _ruleErrors?: string[];
+
+  // Sync to budget metadata
+  synced_at?: string;
+  synced_from_account?: AccountEntity['id'];
+  synced_from_transaction_id?: string;
+  sync_group_id?: string;
 };

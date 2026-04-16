@@ -14,6 +14,7 @@ import m1780000000000 from '../../../migrations/1780000000000_add_account_curren
 import m1790000000000 from '../../../migrations/1790000000000_add_budget_templates';
 import m1800000000000 from '../../../migrations/1800000000000_add_budget_goals';
 import m1810000000000 from '../../../migrations/1810000000000_add_budget_scenarios';
+import m1820000000000 from '../../../migrations/1820000000000_add_priority_items';
 import * as fs from '../../platform/server/fs';
 import { logger } from '../../platform/server/log';
 import * as sqlite from '../../platform/server/sqlite';
@@ -32,6 +33,7 @@ const javascriptMigrations = {
   1790000000000: m1790000000000,
   1800000000000: m1800000000000,
   1810000000000: m1810000000000,
+  1820000000000: m1820000000000,
 };
 
 export async function withMigrationsDir(

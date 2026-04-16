@@ -35,6 +35,7 @@ export function ScheduleEditModal({
   id,
   transaction,
   template,
+  onScheduleCreated,
 }: ScheduleEditModalProps) {
   const { t } = useTranslation();
 
@@ -165,6 +166,15 @@ export function ScheduleEditModal({
 
     if (adding) {
       await onLinkTransactions([...selectedInst.items], res.data);
+      if (onScheduleCreated) {
+        try {
+          await onScheduleCreated(res.data);
+        } catch (e) {
+          // Don't block the modal from closing if the downstream hook
+          // fails — the schedule was already created successfully.
+          console.error('onScheduleCreated callback failed', e);
+        }
+      }
     }
 
     close();

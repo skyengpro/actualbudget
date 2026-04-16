@@ -82,3 +82,7 @@ storybook-static
 
 ##
 prompts/
+
+# Claude Code local dev artifacts
+.agents/
+skills-lock.json
