@@ -96,6 +96,12 @@ openid:
   enforce: true
   # User creation mode: 'manual' or 'login' (auto-create users on first login)
   userCreationMode: "manual"
+  # Comma-separated list of login methods the server will accept. Leave unset
+  # to use the server default (password,header,openid). Set to
+  # "openid,password" to allow hybrid Google + password login for users who
+  # aren't in the Google Workspace. Requires enforce=false so the frontend
+  # discovers both methods via /account/login-methods.
+  # allowedLoginMethods: "openid,password"
 
 # Backup configuration
 backup:
